@@ -9,6 +9,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Protocol", "Protocol", "{A0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protocol", "Protocol\cs\Protocol.csproj", "{ED87B4BA-4BBC-4783-89B8-ADF52286B9B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{B595A6BF-5C08-4CE9-9EA5-BF90A6E81674}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot", "Bot\Bot.csproj", "{4FBA99CB-73F4-4544-9B86-196DA179B0BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +30,14 @@ Global
 		{ED87B4BA-4BBC-4783-89B8-ADF52286B9B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED87B4BA-4BBC-4783-89B8-ADF52286B9B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED87B4BA-4BBC-4783-89B8-ADF52286B9B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B595A6BF-5C08-4CE9-9EA5-BF90A6E81674}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B595A6BF-5C08-4CE9-9EA5-BF90A6E81674}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B595A6BF-5C08-4CE9-9EA5-BF90A6E81674}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B595A6BF-5C08-4CE9-9EA5-BF90A6E81674}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FBA99CB-73F4-4544-9B86-196DA179B0BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FBA99CB-73F4-4544-9B86-196DA179B0BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FBA99CB-73F4-4544-9B86-196DA179B0BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FBA99CB-73F4-4544-9B86-196DA179B0BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{ED87B4BA-4BBC-4783-89B8-ADF52286B9B9} = {A083C535-609A-477D-AF8D-875241F30847}

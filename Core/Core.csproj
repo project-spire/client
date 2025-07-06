@@ -1,8 +1,9 @@
-<Project Sdk="Godot.NET.Sdk/4.4.1">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <EnableDynamicLoading>true</EnableDynamicLoading>
-        <RootNamespace>Spire</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Spire.Core</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
