@@ -1,11 +1,11 @@
-<Project Sdk="Godot.NET.Sdk/4.4.0">
+<Project Sdk="Godot.NET.Sdk/4.4.1">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <RootNamespace>spire</RootNamespace>
+    <RootNamespace>Spire</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\protocol\cs\protocol.csproj" />
+    <ProjectReference Include="..\Protocol\cs\Protocol.csproj" />
   </ItemGroup>
 </Project>
