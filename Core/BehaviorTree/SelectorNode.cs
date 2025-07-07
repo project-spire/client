@@ -1,12 +1,12 @@
 namespace Spire.Core.BehaviorTree;
 
-public class Selector(List<Node> children) : Node
+public class SelectorNode(List<Node> children) : Node
 {
-    public override async ValueTask<NodeState> Run()
+    public override async ValueTask<NodeState> Run(IContext ctx)
     {
         foreach (var node in children)
         {
-            switch (await node.Run())
+            switch (await node.Run(ctx))
             {
                 case NodeState.Success:
                     return NodeState.Success;

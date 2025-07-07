@@ -1,12 +1,12 @@
 namespace Spire.Core.BehaviorTree;
 
-public class Sequence(List<Node> children) : Node
+public class SequenceNode(List<Node> children) : Node
 {
-    public override async ValueTask<NodeState> Run()
+    public override async ValueTask<NodeState> Run(IContext ctx)
     {
         foreach (var node in children)
         {
-            switch (await node.Run())
+            switch (await node.Run(ctx))
             {
                 case NodeState.Success:
                     continue;
