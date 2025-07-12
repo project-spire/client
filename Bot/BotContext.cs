@@ -10,7 +10,7 @@ namespace Spire.Bot;
 public class BotContext(ushort botId, ILogger<BotContext> logger) : INodeContext
 {
     public readonly ushort BotId = botId;
-    public string DevId => $"{Settings.DevIdPrefix}_{BotId:D5}";
+    public string DevId => $"{Settings.BotPrefix}_{BotId:D5}";
     public Account? Account { get; set; }
     public Character? Character { get; set; }
     

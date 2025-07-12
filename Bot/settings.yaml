@@ -1,5 +1,5 @@
 bot_count: 1
-dev_id_prefix: bot
+bot_prefix: bot
 
 lobby_host: localhost
 lobby_port: 8080
