@@ -2,7 +2,7 @@ namespace Spire.Core.BehaviorTree;
 
 public class SequenceNode(List<Node> children) : Node
 {
-    public override async ValueTask<NodeState> Run(IContext ctx)
+    public override async ValueTask<NodeState> Run(INodeContext ctx)
     {
         foreach (var node in children)
         {

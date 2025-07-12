@@ -6,7 +6,7 @@ public abstract class ModeNode<T>(T mode, Dictionary<T, Node> modes) : Node
     protected T mode = mode;
     protected Dictionary<T, Node> modes = modes;
 
-    public override async ValueTask<NodeState> Run(IContext ctx)
+    public override async ValueTask<NodeState> Run(INodeContext ctx)
     {
         var result = await modes[mode].Run(ctx);
         Transit(result);

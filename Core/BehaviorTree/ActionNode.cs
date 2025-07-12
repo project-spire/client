@@ -1,9 +1,9 @@
 namespace Spire.Core.BehaviorTree;
 
-public class ActionNode(ValueTask<NodeState> task) : Node
+public class ActionNode(Func<INodeContext, ValueTask<NodeState>> task) : Node
 {
-    public override async ValueTask<NodeState> Run(IContext ctx)
+    public override async ValueTask<NodeState> Run(INodeContext ctx)
     {
-        return await task;
+        return await task(ctx);
     }
 }

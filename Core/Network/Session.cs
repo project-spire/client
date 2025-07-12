@@ -35,21 +35,21 @@ public sealed class Session
     {
         while (true)
         {
-            var (category, body) =  await Receive();
+            // var (category, body) =  await Receive();
         }
     }
 
-    private async ValueTask<(ProtocolCategory, byte[])> Receive()
-    {
-        var headerResult = await _reader.ReadAtLeastAsync(
-            ProtocolHeader.HeaderSize, _cancellation.Token);
-        if (headerResult.IsCanceled)
-            return (ProtocolCategory.None, null);
-        
-        var (category, length) = ProtocolHeader.Read(headerResult.Buffer);
-        
-        headerResult.Buffer.ToArray()
-        
-        _reader.;
-    }
+    // private async ValueTask<(ProtocolCategory, byte[])> Receive()
+    // {
+    //     // var headerResult = await _reader.ReadAtLeastAsync(
+    //     //     ProtocolHeader.HeaderSize, _cancellation.Token);
+    //     // if (headerResult.IsCanceled)
+    //     //     return (ProtocolCategory.None, null);
+    //     //
+    //     // var (category, length) = ProtocolHeader.Read(headerResult.Buffer);
+    //     //
+    //     // headerResult.Buffer.ToArray()
+    //     //
+    //     // _reader.;
+    // }
 }

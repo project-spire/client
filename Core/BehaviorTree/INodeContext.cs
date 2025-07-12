@@ -1,6 +1,6 @@
 namespace Spire.Core.BehaviorTree;
 
-public interface IContext
+public interface INodeContext
 {
     
 }

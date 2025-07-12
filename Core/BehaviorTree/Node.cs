@@ -8,5 +8,5 @@ public enum NodeState
 
 public abstract class Node
 {
-    public abstract ValueTask<NodeState> Run(IContext ctx);
+    public abstract ValueTask<NodeState> Run(INodeContext ctx);
 }

@@ -1,0 +1,45 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Spire.Bot;
+using Spire.Bot.Node;
+
+var services = new ServiceCollection()
+    .AddLogging(configure =>
+    {
+        configure.AddConsole();
+        configure.SetMinimumLevel(LogLevel.Debug);
+    })
+    .BuildServiceProvider();
+
+var logger = services.GetRequiredService<ILogger<Program>>();
+var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
+logger.LogInformation("Starting {NumBots} bots...", Settings.BotCount);
+
+List<Task> botTasks = [];
+for (ushort botId = 1; botId <= Settings.BotCount; botId++)
+{
+    var botLogger = loggerFactory.CreateLogger<BotContext>();
+    var botContext = new BotContext(botId, botLogger);
+    
+    botTasks.Add(StartBotAsync(botContext));
+}
+
+await Task.WhenAll(botTasks);
+logger.LogInformation("End");
+return;
+
+
+async Task StartBotAsync(BotContext ctx)
+{
+    ctx.Logger.LogInformation("Starting...");
+
+    try
+    {
+        await new AccountActionNode().Run(ctx);
+    }
+    catch (Exception e)
+    {
+        ctx.Logger.LogError(e, "Error");
+    }
+}
