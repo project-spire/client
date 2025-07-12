@@ -2,22 +2,19 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Spire.Core;
 using Spire.Core.BehaviorTree;
 
 namespace Spire.Bot;
 
-public class BotContext : INodeContext
+public class BotContext(ushort botId, ILogger<BotContext> logger) : INodeContext
 {
-    public ushort BotId { get; }
-    public string DevId => $"{Settings.DevIdPrefix}_{BotId:D4}";
+    public readonly ushort BotId = botId;
+    public string DevId => $"{Settings.DevIdPrefix}_{BotId:D5}";
     public Account? Account { get; set; }
-    public ILogger<BotContext> Logger;
+    public Character? Character { get; set; }
     
-    public BotContext(ushort botId, ILogger<BotContext> logger)
-    {
-        BotId = botId;
-        Logger = logger;
-    }
+    public readonly ILogger<BotContext> Logger = logger;
 
     public async ValueTask<JsonElement> Request(string url, string data, bool authorization = true)
     {
@@ -27,10 +24,10 @@ public class BotContext : INodeContext
         handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
         
         using var client = new HttpClient(handler);
-        if (authorization && Account.HasValue)
+        if (authorization && Account != null)
         {
             client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", Account.Value.Token);
+                new AuthenticationHeaderValue("Bearer", Account.Token);
         }
 
         try
@@ -50,10 +47,4 @@ public class BotContext : INodeContext
             throw;
         }
     }
-}
-
-public struct Account(long id, string token)
-{
-    public readonly long Id = id;
-    public readonly string Token = token;
 }

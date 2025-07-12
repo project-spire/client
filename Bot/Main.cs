@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Spire.Bot;
 using Spire.Bot.Node;
+using Spire.Core.BehaviorTree;
 
 var services = new ServiceCollection()
     .AddLogging(configure =>
@@ -36,7 +37,11 @@ async Task StartBotAsync(BotContext ctx)
 
     try
     {
-        await new AccountActionNode().Run(ctx);
+        await new SequenceNode(
+        [
+            new AccountActionNode(),
+            new CharacterActionNode()
+        ]).Run(ctx);
     }
     catch (Exception e)
     {
