@@ -7,7 +7,7 @@ using Spire.Protocol.Net;
 
 namespace Spire.Core.Network;
 
-public abstract class ProtocolDispatcher
+public static class ProtocolDispatcher
 {
     private static readonly Dictionary<
         ProtocolCategory, Dictionary<Type, Action<ISessionContext, IMessage>>> Handlers = [];
@@ -45,10 +45,8 @@ public abstract class ProtocolDispatcher
         }
     }
     
-    public void Dispatch(ISessionContext ctx, IngressProtocol protocol)
+    public static void Dispatch(ISessionContext ctx, IngressProtocol protocol)
     {
-        var i = typeof(int);
-        
         switch (protocol.Category)
         {
             case ProtocolCategory.Auth:
@@ -62,41 +60,30 @@ public abstract class ProtocolDispatcher
                 break;
             case ProtocolCategory.None:
             default:
-                HandleError(
-                    ctx,
-                    protocol,
-                    new Exception("Unknown protocol category"));
+                ctx.HandleError(new DispatchException("Invalid protocol category"));
                 break;
         }
     }
 
-    private void DispatchInternal<T>(ISessionContext ctx, IngressProtocol protocol)
+    private static void DispatchInternal<T>(ISessionContext ctx, IngressProtocol protocol)
     where T : IMessage<T>, new()
     {
         var p = new T().Descriptor.Parser.ParseFrom(protocol.Data);
         if (p == null)
         {
-            HandleError(
-                ctx,
-                protocol,
-                new Exception($"Failed to parse {nameof(T)}"));
+            ctx.HandleError(new DispatchException($"Failed to parse {nameof(T)}"));
             return;
         }
 
         var type = p.GetType();
         if (!Handlers[protocol.Category].TryGetValue(type, out var handler))
         {
-            HandleError(
-                ctx,
-                protocol,
-                new Exception($"Handler for {nameof(type)} is not registered"));
+            ctx.HandleError(new DispatchException($"Handler for {nameof(type)} is not registered"));
             return;
         }
 
         handler(ctx, p);
     }
-
-    protected abstract void HandleError(ISessionContext ctx, IngressProtocol protocol, Exception e);
 
     private static ProtocolCategory GetCategory(Type protocolType)
     {
@@ -107,3 +94,6 @@ public abstract class ProtocolDispatcher
         return ProtocolCategory.None;
     }
 }
+
+[Serializable]
+public class DispatchException(string message) : Exception(message);
