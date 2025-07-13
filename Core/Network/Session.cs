@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
 using Google.Protobuf;
@@ -41,37 +42,71 @@ public class EgressProtocol(byte[] data, bool pooled)
 
 public sealed class Session : IDisposable
 {
-    private readonly CancellationTokenSource _cancellation = new();
-    private readonly Func<Session, ISessionContext> _ctxFactory;
-    private readonly ProtocolDispatcher _dispatcher;
-    private readonly Channel<EgressProtocol> _egressProtocols = Channel.CreateUnbounded<EgressProtocol>();
+    private readonly TcpClient _client = new ();
     private readonly byte[] _headerBuffer = new byte[ProtocolHeader.Size];
+    private readonly Func<Session, ISessionContext> _ctxFactory;
+    private readonly Channel<EgressProtocol> _egressProtocols = Channel.CreateUnbounded<EgressProtocol>();
+    
+    private readonly CancellationTokenSource _cancellation = new();
     private readonly ILogger _logger;
-    private readonly Socket _socket;
 
-    public Session(
-        Socket socket,
-        ProtocolDispatcher dispatcher,
-        Func<Session, ISessionContext> ctxFactory,
-        ILogger logger)
+    private Socket Socket => _client.Client;
+    public bool IsRunning => !_cancellation.IsCancellationRequested;
+    
+    public Session(Func<Session, ISessionContext> ctxFactory, ILogger logger)
     {
-        _socket = socket;
-        _socket.NoDelay = true;
         _ctxFactory = ctxFactory;
-        _dispatcher = dispatcher;
         _logger = logger;
+        
+        Socket.NoDelay = true;
     }
 
-    public bool IsRunning => !_cancellation.IsCancellationRequested;
+    public bool Connect(string host, ushort port)
+    {
+        try
+        {
+            var address = Dns.GetHostAddresses(host)[0];
+            _client.Connect(address, port);
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error connecting to {Host}:{Port}", host, port);
+            return false;
+        }
+    }
+
+    public async ValueTask<bool> ConnectAsync(string host, ushort port)
+    {
+        try
+        {
+            var address = (await Dns.GetHostAddressesAsync(host))[0];
+            await _client.ConnectAsync(address, port);
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error connecting to {Host}:{Port}", host, port);
+            return false;
+        }
+    }
 
     public void Dispose()
     {
         _cancellation.Dispose();
-        _socket.Dispose();
+        _client.Dispose();
     }
 
     public void Start()
     {
+        if (!_client.Connected)
+        {
+            _logger.LogWarning("Session is not connected yet");
+            return;
+        }
+        
         Task.Run(StartReceive, _cancellation.Token);
         Task.Run(StartSend, _cancellation.Token);
     }
@@ -83,15 +118,12 @@ public sealed class Session : IDisposable
         try
         {
             _cancellation.Cancel();
-            _socket.Shutdown(SocketShutdown.Both);
-
             _egressProtocols.Writer.TryComplete();
-
-            _socket.Close();
+            _client.Close();
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error closing socket");
+            _logger.LogError(e, "Error stopping session");
         }
     }
 
@@ -101,7 +133,7 @@ public sealed class Session : IDisposable
             try
             {
                 var (category, data) = await Receive();
-                _dispatcher.Dispatch(_ctxFactory(this), new IngressProtocol(category, data));
+                ProtocolDispatcher.Dispatch(_ctxFactory(this), new IngressProtocol(category, data));
             }
             catch (Exception e)
             {
@@ -113,13 +145,13 @@ public sealed class Session : IDisposable
 
     private async ValueTask<(ProtocolCategory, byte[])> Receive()
     {
-        await _socket.ReceiveAsync(_headerBuffer, SocketFlags.None, _cancellation.Token);
+        await Socket.ReceiveAsync(_headerBuffer, SocketFlags.None, _cancellation.Token);
 
         var (category, length) = ProtocolHeader.Read(_headerBuffer);
         if (length == 0) return (category, []);
 
         var bodyBuffer = ArrayPool<byte>.Shared.Rent(length);
-        await _socket.ReceiveAsync(bodyBuffer, SocketFlags.None, _cancellation.Token);
+        await Socket.ReceiveAsync(bodyBuffer, SocketFlags.None, _cancellation.Token);
 
         return (category, bodyBuffer);
     }
@@ -127,9 +159,10 @@ public sealed class Session : IDisposable
     private async Task StartSend()
     {
         await foreach (var protocol in _egressProtocols.Reader.ReadAllAsync(_cancellation.Token))
+        {
             try
             {
-                await _socket.SendAsync(protocol.Data, SocketFlags.None, _cancellation.Token);
+                await Socket.SendAsync(protocol.Data, SocketFlags.None, _cancellation.Token);
             }
             catch (Exception e)
             {
@@ -137,17 +170,24 @@ public sealed class Session : IDisposable
                 Stop();
                 break;
             }
+        }
     }
 
     public void Send(EgressProtocol protocol)
     {
         if (!IsRunning) return;
+        
         _egressProtocols.Writer.TryWrite(protocol);
     }
 
     public async ValueTask SendAsync(EgressProtocol protocol)
     {
         if (!IsRunning) return;
-        await _egressProtocols.Writer.WriteAsync(protocol, _cancellation.Token);
+
+        try
+        {
+            await _egressProtocols.Writer.WriteAsync(protocol, _cancellation.Token);
+        }
+        catch (OperationCanceledException) { }
     }
 }

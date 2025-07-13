@@ -26,14 +26,15 @@ public static class ProtocolDispatcher
                 !typeof(IMessage).IsAssignableFrom(parameters[1].ParameterType))
             {
                 throw new Exception(
-                    $"[WARN] Invalid protocol handler: {handler.DeclaringType?.Name}.{handler.Name}");
+                    $"Invalid protocol handler: {handler.DeclaringType?.Name}.{handler.Name}");
             }
             
             var protocolType = parameters[1].ParameterType;
             var protocolCategory = GetCategory(protocolType);
             if (protocolCategory == ProtocolCategory.None)
             {
-                throw new Exception($"[WARN] Invalid protocol category for {protocolType.Name}");
+                throw new Exception(
+                    $"Invalid protocol category for {protocolType.Name}");
             }
 
             if (!Handlers.ContainsKey(protocolCategory))
@@ -78,7 +79,8 @@ public static class ProtocolDispatcher
         var type = p.GetType();
         if (!Handlers[protocol.Category].TryGetValue(type, out var handler))
         {
-            ctx.HandleError(new DispatchException($"Handler for {nameof(type)} is not registered"));
+            ctx.HandleError(new DispatchException(
+                $"Handler for {nameof(type)} is not registered"));
             return;
         }
 
