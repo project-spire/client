@@ -1,5 +1,5 @@
 .idea
-*.Dotsettings.user
+*.DotSettings.user
 
 bin
 obj

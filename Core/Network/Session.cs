@@ -7,47 +7,67 @@ using Spire.Protocol;
 
 namespace Spire.Core.Network;
 
-public class IngressMessage(ProtocolCategory category, byte[] data)
+public class IngressProtocol(ProtocolCategory category, byte[] data)
 {
     public ProtocolCategory Category { get; } = category;
     public byte[] Data { get; } = data;
-    
-    ~IngressMessage()
+
+    ~IngressProtocol()
     {
         ArrayPool<byte>.Shared.Return(Data);
     }
 }
 
-public class EgressMessage(byte[] data, bool pooled)
+public class EgressProtocol(byte[] data, bool pooled)
 {
     public byte[] Data { get; } = data;
-    public bool Pooled { get; } = pooled;
 
-    ~EgressMessage()
+    ~EgressProtocol()
     {
         if (pooled)
             ArrayPool<byte>.Shared.Return(Data);
+    }
+
+    public static EgressProtocol New(ProtocolCategory category, IMessage protocol, bool pooled = true)
+    {
+        var size = protocol.CalculateSize() + ProtocolHeader.Size;
+        var buffer = pooled ? ArrayPool<byte>.Shared.Rent(size) : new byte[size];
+        ProtocolHeader.Write(category, (ushort)size, buffer.AsSpan()[..ProtocolHeader.Size]);
+        protocol.WriteTo(buffer.AsSpan()[ProtocolHeader.Size..]);
+
+        return new EgressProtocol(buffer, pooled);
     }
 }
 
 public sealed class Session : IDisposable
 {
-    private readonly Socket _socket;
-    private readonly byte[] _headerBuffer = new byte[ProtocolHeader.Size];
-    private readonly Channel<EgressMessage> _egressMessages = Channel.CreateUnbounded<EgressMessage>();
     private readonly CancellationTokenSource _cancellation = new();
-    private readonly MessageHandler _handler;
+    private readonly Func<Session, ISessionContext> _ctxFactory;
+    private readonly ProtocolDispatcher _dispatcher;
+    private readonly Channel<EgressProtocol> _egressProtocols = Channel.CreateUnbounded<EgressProtocol>();
+    private readonly byte[] _headerBuffer = new byte[ProtocolHeader.Size];
     private readonly ILogger _logger;
-    
-    public bool IsRunning => !_cancellation.IsCancellationRequested;
-    
-    public Session(Socket socket, MessageHandler handler, ILogger logger)
+    private readonly Socket _socket;
+
+    public Session(
+        Socket socket,
+        ProtocolDispatcher dispatcher,
+        Func<Session, ISessionContext> ctxFactory,
+        ILogger logger)
     {
         _socket = socket;
         _socket.NoDelay = true;
-        
-        _handler = handler;
+        _ctxFactory = ctxFactory;
+        _dispatcher = dispatcher;
         _logger = logger;
+    }
+
+    public bool IsRunning => !_cancellation.IsCancellationRequested;
+
+    public void Dispose()
+    {
+        _cancellation.Dispose();
+        _socket.Dispose();
     }
 
     public void Start()
@@ -58,14 +78,14 @@ public sealed class Session : IDisposable
 
     public void Stop()
     {
-        if (_cancellation.IsCancellationRequested) return;
+        if (!IsRunning) return;
 
         try
         {
             _cancellation.Cancel();
             _socket.Shutdown(SocketShutdown.Both);
 
-            _egressMessages.Writer.TryComplete();
+            _egressProtocols.Writer.TryComplete();
 
             _socket.Close();
         }
@@ -78,11 +98,10 @@ public sealed class Session : IDisposable
     private async Task StartReceive()
     {
         while (IsRunning)
-        {
             try
             {
                 var (category, data) = await Receive();
-                _handler.Handle(new IngressMessage(category, data));
+                _dispatcher.Dispatch(_ctxFactory(this), new IngressProtocol(category, data));
             }
             catch (Exception e)
             {
@@ -90,29 +109,27 @@ public sealed class Session : IDisposable
                 Stop();
                 break;
             }
-        }
     }
 
     private async ValueTask<(ProtocolCategory, byte[])> Receive()
     {
         await _socket.ReceiveAsync(_headerBuffer, SocketFlags.None, _cancellation.Token);
-        
+
         var (category, length) = ProtocolHeader.Read(_headerBuffer);
         if (length == 0) return (category, []);
-        
+
         var bodyBuffer = ArrayPool<byte>.Shared.Rent(length);
         await _socket.ReceiveAsync(bodyBuffer, SocketFlags.None, _cancellation.Token);
-        
+
         return (category, bodyBuffer);
     }
 
     private async Task StartSend()
     {
-        await foreach (var message in _egressMessages.Reader.ReadAllAsync(_cancellation.Token))
-        {
+        await foreach (var protocol in _egressProtocols.Reader.ReadAllAsync(_cancellation.Token))
             try
             {
-                await _socket.SendAsync(message.Data, SocketFlags.None, _cancellation.Token);
+                await _socket.SendAsync(protocol.Data, SocketFlags.None, _cancellation.Token);
             }
             catch (Exception e)
             {
@@ -120,24 +137,17 @@ public sealed class Session : IDisposable
                 Stop();
                 break;
             }
-        }
     }
 
-    public void Send(EgressMessage message)
+    public void Send(EgressProtocol protocol)
     {
         if (!IsRunning) return;
-        _egressMessages.Writer.TryWrite(message);
+        _egressProtocols.Writer.TryWrite(protocol);
     }
 
-    public async ValueTask SendAsync(EgressMessage message)
+    public async ValueTask SendAsync(EgressProtocol protocol)
     {
         if (!IsRunning) return;
-        await _egressMessages.Writer.WriteAsync(message, _cancellation.Token);
-    }
-
-    public void Dispose()
-    {
-        _cancellation.Dispose();
-        _socket.Dispose();
+        await _egressProtocols.Writer.WriteAsync(protocol, _cancellation.Token);
     }
 }
