@@ -8,5 +8,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Protocol\cs\Protocol.csproj" />
+        <Compile Include="..\gen\*.cs" />
+        
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0-preview.5.25277.114" />
     </ItemGroup>
 </Project>
