@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Spire.Core;
 using Spire.Core.BehaviorTree;
 
@@ -16,6 +17,8 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
         
         var token = await RequestToken(ctx, accountId);
         ctx.Account = new Account(accountId, token);
+        
+        ctx.Logger.LogDebug("Token: {token}", token);
         
         return NodeState.Success;
     }

@@ -1,20 +1,35 @@
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Spire.Core;
 using Spire.Core.BehaviorTree;
+using Spire.Core.Network;
 
 namespace Spire.Bot;
 
-public class BotContext(ushort botId, ILogger<BotContext> logger) : INodeContext
+public class BotContext : INodeContext, ISessionContext
 {
-    public readonly ushort BotId = botId;
-    public string DevId => $"{Settings.BotPrefix}_{BotId:D5}";
+    private readonly TaskCompletionSource _stopped = new();
+    
+    public readonly ushort BotId;
+    public readonly string DevId;
+    public readonly ILogger<BotContext> Logger;
+    
+    public Session Session { get; }
     public Account? Account { get; set; }
     public Character? Character { get; set; }
+    public Task Stopped => _stopped.Task;
     
-    public readonly ILogger<BotContext> Logger = logger;
+    public BotContext(ushort botId, ILogger<BotContext> logger)
+    {
+        BotId = botId;
+        DevId = $"{Settings.BotPrefix}_{BotId:D5}";
+        Logger = logger;
+        
+        Session = new Session(_ => this, Logger);
+    }
 
     public async ValueTask<JsonElement> Request(string url, string data, bool authorization = true)
     {
@@ -46,5 +61,20 @@ public class BotContext(ushort botId, ILogger<BotContext> logger) : INodeContext
             Logger.LogError("Error requesting to {url}: {message}", url, e.Message);
             throw;
         }
+    }
+
+    public void Stop(Exception? e = null)
+    {
+        if (e != null)
+            Logger.LogError("Stopping: {message}", e.Message);
+        
+        Session.Stop();
+        _stopped.TrySetResult();
+    }
+
+    public void HandleError(DispatchException e)
+    {
+        Logger.LogError("Error dispatching: {message}", e.Message);
+        Stop();
     }
 }
