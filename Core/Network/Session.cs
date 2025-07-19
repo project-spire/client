@@ -19,23 +19,23 @@ public class IngressProtocol(ProtocolCategory category, byte[] data)
     }
 }
 
-public class EgressProtocol(byte[] data, bool pooled)
+public class EgressProtocol(byte[] data, int length, bool pooled)
 {
-    public readonly byte[] Data = data;
+    public ReadOnlyMemory<byte> Data => data.AsMemory(0, length);
 
     ~EgressProtocol()
     {
-        if (pooled) ArrayPool<byte>.Shared.Return(Data);
+        if (pooled) ArrayPool<byte>.Shared.Return(data);
     }
 
-    public static EgressProtocol New(ProtocolCategory category, IMessage protocol, bool pooled = true)
+    private static EgressProtocol New(ProtocolCategory category, IMessage protocol, bool pooled = true)
     {
         var size = protocol.CalculateSize() + ProtocolHeader.Size;
         var buffer = pooled ? ArrayPool<byte>.Shared.Rent(size) : new byte[size];
         ProtocolHeader.Write(category, size - ProtocolHeader.Size, buffer.AsSpan()[..ProtocolHeader.Size]);
         protocol.WriteTo(buffer.AsSpan()[ProtocolHeader.Size..size]);
 
-        return new EgressProtocol(buffer, pooled);
+        return new EgressProtocol(buffer, size, pooled);
     }
 
     public static EgressProtocol Auth(IMessage protocol, bool pooled = true)
