@@ -33,11 +33,14 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
         for (var i = 0; i < rawCharacters.GetArrayLength(); i++)
         {
             var rawCharacter = rawCharacters[i];
+            if (!Guid.TryParse(rawCharacter.GetProperty("id").GetString(), out var characterId))
+                throw new Exception("Invalid UUID from character id");
+            
             characters.Add(new Character
             (
-                rawCharacter.GetProperty("id").GetInt64(),
-                rawCharacter.GetProperty("name").GetString()!,
-                rawCharacter.GetProperty("race").GetString()!
+                Id: characterId,
+                Name: rawCharacter.GetProperty("name").GetString()!,
+                Race: rawCharacter.GetProperty("race").GetString()!
             ));
         }
         
@@ -55,11 +58,14 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
         
         var resp = await ctx.Request(url, data);
         var rawCharacter = resp.GetProperty("character");
+        if (!Guid.TryParse(rawCharacter.GetProperty("id").GetString(), out var characterId))
+            throw new Exception("Invalid UUID from character id");
+        
         var character = new Character
         (
-            rawCharacter.GetProperty("id").GetInt64(),
-            rawCharacter.GetProperty("name").GetString()!,
-            rawCharacter.GetProperty("race").GetString()!
+            Id: characterId,
+            Name: rawCharacter.GetProperty("name").GetString()!,
+            Race: rawCharacter.GetProperty("race").GetString()!
         );
         
         ctx.Logger.LogInformation("Created character {}", character.Id);

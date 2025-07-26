@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spire.Bot;
 using Spire.Bot.Node;
+using Spire.Core;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
 using Spire.Protocol.Auth;
@@ -54,7 +55,7 @@ async Task StartBotAsync(BotContext ctx)
             {
                 Kind = Login.Types.Kind.Enter,
                 Token = ctx.Account!.Token,
-                CharacterId = ctx.Character!.Id
+                CharacterId = ProtocolConvert.ToUuid(ctx.Character!.Id),
             }
         };
 

@@ -1,3 +1,3 @@
 namespace Spire.Core;
 
-public record Account(long Id, string Token);
+public record Account(Guid Id, string Token);

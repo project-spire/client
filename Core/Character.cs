@@ -1,3 +1,3 @@
 namespace Spire.Core;
 
-public record Character(long Id, string Name, string Race);
+public record Character(Guid Id, string Name, string Race);
