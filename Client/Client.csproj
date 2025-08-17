@@ -4,12 +4,4 @@
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <RootNamespace>Spire</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Protocol\cs\Protocol.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Humanizer.Core" Version="3.0.0-beta.96" />
-    </ItemGroup>
 </Project>

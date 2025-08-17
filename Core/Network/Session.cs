@@ -2,22 +2,11 @@ using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
-using Google.Protobuf;
 using Microsoft.Extensions.Logging;
+using Spire.Core.Protocol;
 using Spire.Protocol;
 
 namespace Spire.Core.Network;
-
-public class IngressProtocol(ProtocolCategory category, byte[] data)
-{
-    public ProtocolCategory Category { get; } = category;
-    public byte[] Data { get; } = data;
-
-    ~IngressProtocol()
-    {
-        ArrayPool<byte>.Shared.Return(Data);
-    }
-}
 
 public class EgressProtocol(byte[] data, int length, bool pooled)
 {
@@ -28,29 +17,16 @@ public class EgressProtocol(byte[] data, int length, bool pooled)
         if (pooled) ArrayPool<byte>.Shared.Return(data);
     }
 
-    private static EgressProtocol New(ProtocolCategory category, IMessage protocol, bool pooled = true)
+    private static EgressProtocol New(IProtocol protocol, bool pooled = true)
     {
-        var size = protocol.CalculateSize() + ProtocolHeader.Size;
-        var buffer = pooled ? ArrayPool<byte>.Shared.Rent(size) : new byte[size];
-        ProtocolHeader.Write(category, size - ProtocolHeader.Size, buffer.AsSpan()[..ProtocolHeader.Size]);
-        protocol.WriteTo(buffer.AsSpan()[ProtocolHeader.Size..size]);
+        var length = protocol.Size + ProtocolHeader.Size;
+        var buffer = pooled ? ArrayPool<byte>.Shared.Rent(length) : new byte[length];
+        ProtocolHeader header = new(length, protocol.ProtocolId);
+        
+        header.Encode(buffer.AsSpan()[..ProtocolHeader.Size]);
+        protocol.Encode(buffer.AsSpan()[ProtocolHeader.Size..length]);
 
-        return new EgressProtocol(buffer, size, pooled);
-    }
-
-    public static EgressProtocol Auth(IMessage protocol, bool pooled = true)
-    {
-        return New(ProtocolCategory.Auth, protocol, pooled);
-    }
-    
-    public static EgressProtocol Game(IMessage protocol, bool pooled = true)
-    {
-        return New(ProtocolCategory.Game, protocol, pooled);
-    }
-    
-    public static EgressProtocol Net(IMessage protocol, bool pooled = true)
-    {
-        return New(ProtocolCategory.Net, protocol, pooled);
+        return new EgressProtocol(buffer, length, pooled);
     }
 }
 
@@ -130,8 +106,8 @@ public sealed class Session : IDisposable
         {
             try
             {
-                var (category, data) = await Receive();
-                ProtocolDispatcher.Dispatch(_ctxFactory(this), new IngressProtocol(category, data));
+                var protocol = await Receive();
+                ProtocolDispatcher.Dispatch(_ctxFactory(this), protocol);
             }
             catch (OperationCanceledException)
             {
@@ -144,19 +120,19 @@ public sealed class Session : IDisposable
         }
     }
 
-    private async ValueTask<(ProtocolCategory, byte[])> Receive()
+    private async ValueTask<IProtocol> Receive()
     {
         var n = await Socket.ReceiveAsync(_headerBuffer, SocketFlags.None, _cancellation.Token);
         if (n == 0) throw new IOException("End of file received");
 
-        var (category, length) = ProtocolHeader.Read(_headerBuffer);
-        if (length == 0) return (ProtocolCategory.None, []);
+        var header = ProtocolHeader.Decode(_headerBuffer);
 
-        var bodyBuffer = ArrayPool<byte>.Shared.Rent(length);
+        var bodyBuffer = ArrayPool<byte>.Shared.Rent(header.Length);
         n = await Socket.ReceiveAsync(bodyBuffer, SocketFlags.None, _cancellation.Token);
         if (n == 0) throw new IOException("End of file received");
-
-        return (category, bodyBuffer);
+        
+        var protocol = IProtocol.Decode(header.Id, bodyBuffer);
+        return protocol;
     }
 
     private async Task StartSend()

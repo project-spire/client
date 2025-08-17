@@ -40,14 +40,10 @@ public class ProtocolGenerator(DirectoryInfo schemaDir, DirectoryInfo genDir)
             categories.Add(category);
         }
         categories.Sort((a, b) => a.Offset < b.Offset ? -1 : 1);
-
-        List<string> imports = [];
         
         // Build protocol list with numbers
         foreach (var category in categories)
         {
-            imports.Add($"using Spire.Protocol.{category.Category.Pascalize()};");
-            
             var number = category.Offset;
             foreach (var protocol in category.Protocols)
             {
@@ -58,39 +54,51 @@ public class ProtocolGenerator(DirectoryInfo schemaDir, DirectoryInfo genDir)
         
         List<string> decodes = [];
         List<string> cases = [];
-        List<string> extensions = [];
         
         // Generate code fragments
         foreach (var (category, protocol, number) in protocols)
         {
-            decodes.Add($"{number} => {protocol}.Parser.ParseFrom(data),");
+            var categoryName = category.Pascalize();
+            var recordName = $"{protocol}Protocol";
             
-            cases.Add($"public record {protocol}({protocol} Value) : Protocol;");
-        
-            extensions.Add($"public static ushort ProtocolId(this {protocol} _) => {number};");
+            decodes.Add($"{number} => new {recordName}({categoryName}.{protocol}.Parser.ParseFrom(data)),");
+            
+            cases.Add($@"
+public record {recordName}({categoryName}.{protocol} Value) : IProtocol
+{{
+    public ushort ProtocolId => {number};
+    public int Size => Value.CalculateSize();
+    
+    public void Encode(Span<byte> buffer)
+    {{
+        Value.WriteTo(buffer);
+    }}
+}}");
         }
 
         var code = $@"// Generated file
-{string.Join("\n", imports)}
+using Google.Protobuf;
 
 namespace Spire.Protocol;
 
-public abstract record Protocol
+public interface IProtocol
 {{
-    public static Protocol Decode(ushort id, ReadOnlySpan<byte> data) {{
+    public ushort ProtocolId {{ get; }}
+    public int Size {{ get; }}
+
+    public void Encode(Span<byte> buffer);
+
+    public static IProtocol Decode(ushort id, ReadOnlySpan<byte> data) {{
         return id switch {{
             {string.Join($"\n{TAB}{TAB}{TAB}", decodes)}
             _ => throw new ProtocolException($""Unknown protocol id: {{id}}"")
         }};
     }}
-
-    {string.Join($"\n{TAB}", cases)}
 }}
 
-public static class ProtocolExtensions
-{{
-    {string.Join($"\n{TAB}", extensions)}
-}}
+public class ProtocolException(string message) : Exception(message);
+
+{string.Join("\n", cases)}
 ";
         
         File.WriteAllText(Path.Combine(genDir.FullName, "Protocol.impl.cs"), code);

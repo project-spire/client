@@ -26,7 +26,7 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
 
     private static async ValueTask<(bool, Guid)> FindAccount(BotContext ctx)
     {
-        var url = Settings.LobbyUrl + "/account/dev/me";
+        var url = Config.LobbyUrl + "/account/dev/me";
         var data = JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["dev_id"] = ctx.DevId
@@ -42,7 +42,7 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
     
     private static async ValueTask<Guid> CreateAccount(BotContext ctx)
     {
-        var url = Settings.LobbyUrl + "/account/dev/create";
+        var url = Config.LobbyUrl + "/account/dev/create";
         var data = JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["dev_id"] = ctx.DevId
@@ -57,7 +57,7 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
 
     private static async ValueTask<string> RequestToken(BotContext ctx, Guid accountId)
     {
-        var url = Settings.LobbyUrl + "/account/dev/token";
+        var url = Config.LobbyUrl + "/account/dev/token";
         var data = JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["account_id"] = accountId.ToString()

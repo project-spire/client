@@ -24,7 +24,7 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
     
     private static async ValueTask<List<Character>> ListCharacter(BotContext ctx)
     {
-        var url = Settings.LobbyUrl + "/character/list";
+        var url = Config.LobbyUrl + "/character/list";
         
         var resp = await ctx.Request(url, string.Empty);
         var rawCharacters = resp.GetProperty("characters");
@@ -49,7 +49,7 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
     
     private static async ValueTask<Character> CreateCharacter(BotContext ctx)
     {
-        var url = Settings.LobbyUrl + "/character/create";
+        var url = Config.LobbyUrl + "/character/create";
         var data = JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["character_name"] = ctx.DevId + "_c",

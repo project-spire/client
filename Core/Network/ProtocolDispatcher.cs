@@ -1,16 +1,12 @@
 using System.Reflection;
 using Google.Protobuf;
 using Spire.Protocol;
-using Spire.Protocol.Auth;
-using Spire.Protocol.Game;
-using Spire.Protocol.Net;
 
 namespace Spire.Core.Network;
 
 public static class ProtocolDispatcher
 {
-    private static readonly Dictionary<
-        ProtocolCategory, Dictionary<Type, Action<ISessionContext, IMessage>>> Handlers = [];
+    private static readonly Dictionary<ushort, ProtocolHandlerEntry> HandlerEntries = [];
 
     public static void Register(Assembly assembly)
     {
@@ -20,82 +16,65 @@ public static class ProtocolDispatcher
 
         foreach (var handler in handlers)
         {
-            var parameters = handler.GetParameters();
-            if (parameters.Length != 2 ||
-                parameters[0].ParameterType != typeof(ISessionContext) ||
-                !typeof(IMessage).IsAssignableFrom(parameters[1].ParameterType))
-            {
-                throw new Exception(
-                    $"Invalid protocol handler: {handler.DeclaringType?.Name}.{handler.Name}");
-            }
-            
-            var protocolType = parameters[1].ParameterType;
-            var protocolCategory = GetCategory(protocolType);
-            if (protocolCategory == ProtocolCategory.None)
-            {
-                throw new Exception(
-                    $"Invalid protocol category for {protocolType.Name}");
-            }
-
-            if (!Handlers.ContainsKey(protocolCategory))
-                Handlers[protocolCategory] = [];
-            Handlers[protocolCategory][protocolType] = (ctx, protocol) =>
-            {
-                handler.Invoke(null, [ctx, protocol]);
-            };
+            RegisterHandler(handler);
         }
+    }
+
+    private static void RegisterHandler(MethodInfo handler)
+    {
+        var attribute = handler.GetCustomAttribute<ProtocolHandlerAttribute>();
+        if (attribute == null) return;
+        
+        var parameters = handler.GetParameters();
+        if (parameters.Length != 2 ||
+            parameters[0].ParameterType != typeof(ISessionContext))
+            throw new Exception(
+                $"Invalid protocol handler signature: {handler.DeclaringType?.Name}.{handler.Name}");
+        
+        
+        var protocolWrapperType = attribute.ProtocolType;
+        var protocolType = parameters[1].ParameterType;
+        
+        if (!typeof(IProtocol).IsAssignableFrom(protocolWrapperType))
+            throw new Exception(
+                $"Protocol type {protocolWrapperType.Name} must implement {nameof(IProtocol)}");
+        
+        if (!typeof(IMessage).IsAssignableFrom(protocolType))
+            throw new Exception(
+                $"Protocol data type {protocolType.Name} must implement {nameof(IMessage)}");
+        
+        var protocolIdProperty = protocolType.GetProperty("ProtocolId")!;
+        var protocolId = (ushort)protocolIdProperty.GetValue(null)!;
+        
+        var valueProperty = protocolType.GetProperty("Value")!;
+        
+        HandlerEntries[protocolId] = new ProtocolHandlerEntry(handler, valueProperty);
     }
     
-    public static void Dispatch(ISessionContext ctx, IngressProtocol protocol)
+    public static void Dispatch(ISessionContext ctx, IProtocol protocol)
     {
-        switch (protocol.Category)
+        if (!HandlerEntries.TryGetValue(protocol.ProtocolId, out var handlerEntry))
         {
-            case ProtocolCategory.Auth:
-                DispatchInternal<AuthServerProtocol>(ctx, protocol);
-                break;
-            case ProtocolCategory.Game:
-                DispatchInternal<GameServerProtocol>(ctx, protocol);
-                break;
-            case ProtocolCategory.Net:
-                DispatchInternal<NetServerProtocol>(ctx, protocol);
-                break;
-            case ProtocolCategory.None:
-            default:
-                ctx.HandleError(new DispatchException("Invalid protocol category"));
-                break;
-        }
-    }
-
-    private static void DispatchInternal<T>(ISessionContext ctx, IngressProtocol protocol)
-    where T : IMessage<T>, new()
-    {
-        var p = new T().Descriptor.Parser.ParseFrom(protocol.Data);
-        if (p == null)
-        {
-            ctx.HandleError(new DispatchException($"Failed to parse {nameof(T)}"));
+            ctx.HandleError(new DispatchException($"Unhandled protocol {nameof(protocol)}"));
             return;
         }
 
-        var type = p.GetType();
-        if (!Handlers[protocol.Category].TryGetValue(type, out var handler))
+        try
         {
-            ctx.HandleError(new DispatchException(
-                $"Handler for {nameof(type)} is not registered"));
-            return;
+            var protocolData = handlerEntry.ValueProperty.GetValue(protocol);
+            handlerEntry.Handler.Invoke(null, [ctx, protocolData]);
         }
-
-        handler(ctx, p);
-    }
-
-    private static ProtocolCategory GetCategory(Type protocolType)
-    {
-        var ns = protocolType.Namespace ?? "";
-        if (ns.Contains("Spire.Protocol.Auth")) return ProtocolCategory.Auth;
-        if (ns.Contains("Spire.Protocol.Game")) return ProtocolCategory.Game;
-        if (ns.Contains("Spire.Protocol.Net")) return ProtocolCategory.Net;
-        return ProtocolCategory.None;
+        catch (Exception e)
+        {
+            ctx.HandleError(new DispatchException($"Failed to dispatch protocol {nameof(protocol)}: {e.Message}"));
+        }
     }
 }
+
+internal record ProtocolHandlerEntry(
+    MethodInfo Handler,
+    PropertyInfo ValueProperty
+);
 
 [Serializable]
 public class DispatchException(string message) : Exception(message);

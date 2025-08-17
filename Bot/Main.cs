@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spire.Bot;
 using Spire.Bot.Node;
-using Spire.Core;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
 using Spire.Protocol.Auth;
@@ -21,10 +20,10 @@ var loggerFactory = services.GetRequiredService<ILoggerFactory>();
 
 ProtocolDispatcher.Register(Assembly.GetExecutingAssembly());
 
-logger.LogInformation("Starting {NumBots} bots...", Settings.BotCount);
+logger.LogInformation("Starting {NumBots} bots...", Config.BotCount);
 
 List<Task> botTasks = [];
-for (ushort botId = 1; botId <= Settings.BotCount; botId++)
+for (ushort botId = 1; botId <= Config.BotCount; botId++)
 {
     var botLogger = loggerFactory.CreateLogger<BotContext>();
     var botContext = new BotContext(botId, botLogger);
@@ -49,20 +48,20 @@ async Task StartBotAsync(BotContext ctx)
             new CharacterActionNode()
         ]).Run(ctx);
 
-        var protocol = new AuthClientProtocol
-        {
-            Login = new Login
-            {
-                Kind = Login.Types.Kind.Enter,
-                Token = ctx.Account!.Token,
-                CharacterId = ProtocolConvert.ToUuid(ctx.Character!.Id),
-            }
-        };
-
-        await ctx.Session.ConnectAsync(Settings.GameHost, Settings.GamePort);
-        ctx.Session.Start();
-        
-        await ctx.Session.SendAsync(EgressProtocol.Auth(protocol));
+        // var protocol = new AuthClientProtocol
+        // {
+        //     Login = new Login
+        //     {
+        //         Kind = Login.Types.Kind.Enter,
+        //         Token = ctx.Account!.Token,
+        //         CharacterId = ProtocolConvert.ToUuid(ctx.Character!.Id),
+        //     }
+        // };
+        //
+        // await ctx.Session.ConnectAsync(Config.GameHost, Config.GamePort);
+        // ctx.Session.Start();
+        //
+        // await ctx.Session.SendAsync(EgressProtocol.Auth(protocol));
 
         await Task.WhenAny(ctx.Stopped, ctx.Session.CompletionTask);
     }

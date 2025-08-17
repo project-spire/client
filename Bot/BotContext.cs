@@ -25,7 +25,7 @@ public class BotContext : INodeContext, ISessionContext
     public BotContext(ushort botId, ILogger<BotContext> logger)
     {
         BotId = botId;
-        DevId = $"{Settings.BotPrefix}_{BotId:D5}";
+        DevId = $"{Config.BotPrefix}_{BotId:D5}";
         Logger = logger;
         
         Session = new Session(_ => this, Logger);

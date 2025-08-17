@@ -1,6 +1,6 @@
 namespace Spire.Bot;
 
-public static class Settings
+public static class Config
 {
     public static ushort BotCount { get; }
     public static string BotPrefix { get; }
@@ -12,19 +12,19 @@ public static class Settings
     public static string GameHost { get; }
     public static ushort GamePort { get; }
 
-    static Settings()
+    static Config()
     {
         var data = File.ReadAllText("settings.yaml");
         var deserializer = new YamlDotNet.Serialization.Deserializer();
-        var settings = deserializer.Deserialize<Dictionary<string, object>>(data);
+        var config = deserializer.Deserialize<Dictionary<string, object>>(data);
 
-        BotCount = Convert.ToUInt16(settings["bot_count"]);
-        BotPrefix = Convert.ToString(settings["bot_prefix"])!;
+        BotCount = Convert.ToUInt16(config["bot_count"]);
+        BotPrefix = Convert.ToString(config["bot_prefix"])!;
         
-        LobbyHost = Convert.ToString(settings["lobby_host"])!;
-        LobbyPort = Convert.ToUInt16(settings["lobby_port"]);
+        LobbyHost = Convert.ToString(config["lobby_host"])!;
+        LobbyPort = Convert.ToUInt16(config["lobby_port"]);
         
-        GameHost = Convert.ToString(settings["game_host"])!;
-        GamePort = Convert.ToUInt16(settings["game_port"]);
+        GameHost = Convert.ToString(config["game_host"])!;
+        GamePort = Convert.ToUInt16(config["game_port"]);
     }
 }
