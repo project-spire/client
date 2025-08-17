@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 download=$1
 
 # Download protoc
@@ -16,6 +18,11 @@ if [ "$download" == "1" ]; then
 fi
 
 # Generate protocol codes
-mkdir -p gen
-schemas=$(find Protocol/schemas -name '*.proto')
-bin/protoc -I=Protocol/schemas --csharp_out=gen $schemas
+schema_dir="Protocol/schema"
+gen_dir="gen"
+
+mkdir -p $gen_dir
+schemas=$(find $schema_dir -name '*.proto')
+bin/protoc -I=$schema_dir --csharp_out=$gen_dir $schemas
+
+dotnet run --project Generator -- protocol --schema_dir Protocol/schema --gen_dir gen
