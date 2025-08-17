@@ -33,20 +33,20 @@ public static class ProtocolDispatcher
         
         
         var protocolWrapperType = attribute.ProtocolType;
-        var protocolType = parameters[1].ParameterType;
+        var protocolDataType = parameters[1].ParameterType;
         
         if (!typeof(IProtocol).IsAssignableFrom(protocolWrapperType))
             throw new Exception(
                 $"Protocol type {protocolWrapperType.Name} must implement {nameof(IProtocol)}");
         
-        if (!typeof(IMessage).IsAssignableFrom(protocolType))
+        if (!typeof(IMessage).IsAssignableFrom(protocolDataType))
             throw new Exception(
-                $"Protocol data type {protocolType.Name} must implement {nameof(IMessage)}");
+                $"Protocol data type {protocolDataType.Name} must implement {nameof(IMessage)}");
         
-        var protocolIdProperty = protocolType.GetProperty("ProtocolId")!;
-        var protocolId = (ushort)protocolIdProperty.GetValue(null)!;
+        var instance = (IProtocol)Activator.CreateInstance(protocolWrapperType, [null])!;
+        var protocolId = instance.ProtocolId;
         
-        var valueProperty = protocolType.GetProperty("Value")!;
+        var valueProperty = protocolWrapperType.GetProperty("Value")!;
         
         HandlerEntries[protocolId] = new ProtocolHandlerEntry(handler, valueProperty);
     }

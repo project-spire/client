@@ -14,7 +14,7 @@ public static class Config
 
     static Config()
     {
-        var data = File.ReadAllText("settings.yaml");
+        var data = File.ReadAllText("config.yaml");
         var deserializer = new YamlDotNet.Serialization.Deserializer();
         var config = deserializer.Deserialize<Dictionary<string, object>>(data);
 
