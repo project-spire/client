@@ -1,8 +1,8 @@
 bot_count: 1
-bot_prefix: bot
+bot_prefix: "bot"
 
-lobby_host: localhost
+lobby_host: "127.0.0.1"
 lobby_port: 8080
 
-game_host: localhost
+game_host: "127.0.0.1"
 game_port: 6400

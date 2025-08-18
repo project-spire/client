@@ -58,8 +58,8 @@ async Task StartBotAsync(BotContext ctx)
         //     }
         // };
         //
-        // await ctx.Session.ConnectAsync(Config.GameHost, Config.GamePort);
-        // ctx.Session.Start();
+        await ctx.Session.ConnectAsync(Config.GameHost, Config.GamePort);
+        ctx.Session.Start();
         //
         // await ctx.Session.SendAsync(EgressProtocol.Auth(protocol));
 

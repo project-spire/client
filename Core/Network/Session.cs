@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Net;
-using System.Net.Sockets;
+using System.Net.Quic;
+using System.Net.Security;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Spire.Core.Protocol;
@@ -30,74 +31,106 @@ public class EgressProtocol(byte[] data, int length, bool pooled)
     }
 }
 
-public sealed class Session : IDisposable
+public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger logger) : IAsyncDisposable, IDisposable
 {
-    private readonly TcpClient _client = new();
+    private const string ApplicationProtocol = "spire";
+    
     private readonly byte[] _headerBuffer = new byte[ProtocolHeader.Size];
     private readonly Channel<EgressProtocol> _egressProtocols = Channel.CreateUnbounded<EgressProtocol>();
-    private readonly Func<Session, ISessionContext> _ctxFactory;
 
     private readonly CancellationTokenSource _cancellation = new();
-    private readonly ILogger _logger;
+
+    private QuicConnection? _connection;
+    private QuicStream? _stream;
     
-    private Socket Socket => _client.Client;
     private bool IsRunning => !_cancellation.IsCancellationRequested;
     
     public Task CompletionTask { get; private set; } = Task.CompletedTask;
-    
-    public Session(Func<Session, ISessionContext> ctxFactory, ILogger logger)
-    {
-        _ctxFactory = ctxFactory;
-        _logger = logger;
-        
-        Socket.NoDelay = true;
-    }
-
-    public void Connect(string host, ushort port)
-    {
-        var address = Dns.GetHostAddresses(host)[0];
-        _client.Connect(address, port);
-    }
 
     public async ValueTask ConnectAsync(string host, ushort port)
     {
-        var address = (await Dns.GetHostAddressesAsync(host))[0];
-        await _client.ConnectAsync(address, port);
+        if (!QuicConnection.IsSupported)
+            throw new NotSupportedException("Quic connection is not supported.");
+        
+        var endpoint = new IPEndPoint(IPAddress.Parse(host), port);
+        if (!IPAddress.TryParse(host, out _))
+        {
+            var addresses = await Dns.GetHostAddressesAsync(host);
+            endpoint = new IPEndPoint(addresses[0], port);
+        }
+        
+        var connectionOptions = new QuicClientConnectionOptions
+        {
+            DefaultStreamErrorCode = 0,
+            DefaultCloseErrorCode = 0,
+            RemoteEndPoint = endpoint,
+            ClientAuthenticationOptions = new SslClientAuthenticationOptions
+            {
+                ApplicationProtocols = [new SslApplicationProtocol(ApplicationProtocol)],
+                RemoteCertificateValidationCallback = (_, _, _, _) => true
+            }
+        };
+        
+        _connection = await QuicConnection.ConnectAsync(connectionOptions, _cancellation.Token);
+        _stream = await _connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
     }
 
     public void Dispose()
     {
-        _cancellation.Dispose();
-        _client.Dispose();
+        DisposeAsync().AsTask().Wait();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await _cancellation.CancelAsync();
+
+            if (QuicConnection.IsSupported)
+            {
+                if (_stream != null)
+                    await _stream.DisposeAsync();
+                
+                if (_connection != null)
+                    await _connection.DisposeAsync();
+            }
+            
+            _cancellation.Dispose();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error during disposal");
+        }
     }
 
     public void Start()
     {
-        if (!_client.Connected)
-        {
-            _logger.LogWarning("Session is not connected yet");
-            return;
-        }
-        
         CompletionTask = Task.WhenAll(
             Task.Run(StartReceive, _cancellation.Token),
             Task.Run(StartSend, _cancellation.Token));
     }
-
-    public void Stop()
+    
+    public async ValueTask StopAsync()
     {
         if (!IsRunning) return;
 
         try
         {
-            _cancellation.Cancel();
+            await _cancellation.CancelAsync();
             _egressProtocols.Writer.TryComplete();
-            _client.Close();
+
+            if (_stream != null)
+                await _stream.FlushAsync();
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error stopping session");
+            logger.LogError(e, "Error stopping session");
         }
+    }
+
+    public void Stop()
+    {
+        StopAsync().AsTask().Wait();
     }
 
     private async Task StartReceive()
@@ -107,43 +140,53 @@ public sealed class Session : IDisposable
             try
             {
                 var protocol = await Receive();
-                ProtocolDispatcher.Dispatch(_ctxFactory(this), protocol);
+                ProtocolDispatcher.Dispatch(ctxFactory(this), protocol);
             }
             catch (OperationCanceledException)
             {
+                break;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error receiving: {message}", e.Message);
-                Stop();
+                logger.LogError(e, "Failed to receive: {message}", e.Message);
+                await StopAsync();
+                break;
             }
         }
     }
 
     private async ValueTask<IProtocol> Receive()
     {
-        var n = await Socket.ReceiveAsync(_headerBuffer, SocketFlags.None, _cancellation.Token);
-        if (n == 0) throw new IOException("End of file received");
+        if (_stream == null)
+            throw new InvalidOperationException("Stream is not available");
+        
+        await _stream.ReadExactlyAsync(_headerBuffer, _cancellation.Token);
 
         var header = ProtocolHeader.Decode(_headerBuffer);
 
         var bodyBuffer = ArrayPool<byte>.Shared.Rent(header.Length);
-        n = await Socket.ReceiveAsync(bodyBuffer, SocketFlags.None, _cancellation.Token);
-        if (n == 0) throw new IOException("End of file received");
+        await _stream.ReadExactlyAsync(bodyBuffer.AsMemory()[..header.Length], _cancellation.Token);
         
         var protocol = IProtocol.Decode(header.Id, bodyBuffer);
+        ArrayPool<byte>.Shared.Return(bodyBuffer);
         return protocol;
     }
 
     private async Task StartSend()
     {
+        if (_stream == null)
+            throw new InvalidOperationException("Stream is not available");
+        if (!QuicConnection.IsSupported)
+            throw new NotSupportedException("Quic connection is not supported.");
+        
         while (IsRunning)
         {
             try
             {
                 await foreach (var protocol in _egressProtocols.Reader.ReadAllAsync(_cancellation.Token))
                 {
-                    await Socket.SendAsync(protocol.Data, SocketFlags.None, _cancellation.Token);
+                    await _stream.WriteAsync(protocol.Data, _cancellation.Token);
+                    await _stream.FlushAsync(_cancellation.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -151,8 +194,8 @@ public sealed class Session : IDisposable
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error sending: {message}", e.Message);
-                Stop();
+                logger.LogError(e, "Failed to send: {message}", e.Message);
+                await StopAsync();
             }
         }
     }
