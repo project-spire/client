@@ -18,11 +18,11 @@ public class EgressProtocol(byte[] data, int length, bool pooled)
         if (pooled) ArrayPool<byte>.Shared.Return(data);
     }
 
-    private static EgressProtocol New(IProtocol protocol, bool pooled = true)
+    public static EgressProtocol New(IProtocol protocol, bool pooled = true)
     {
-        var length = protocol.Size + ProtocolHeader.Size;
+        var length = ProtocolHeader.Size + protocol.Size;
         var buffer = pooled ? ArrayPool<byte>.Shared.Rent(length) : new byte[length];
-        ProtocolHeader header = new(length, protocol.ProtocolId);
+        ProtocolHeader header = new(length - ProtocolHeader.Size, protocol.ProtocolId);
         
         header.Encode(buffer.AsSpan()[..ProtocolHeader.Size]);
         protocol.Encode(buffer.AsSpan()[ProtocolHeader.Size..length]);
@@ -72,7 +72,21 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
         };
         
         _connection = await QuicConnection.ConnectAsync(connectionOptions, _cancellation.Token);
-        _stream = await _connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
+    }
+
+    public async ValueTask LoginAsync(LoginProtocol login)
+    {
+        var protocol = EgressProtocol.New(login);
+        logger.LogDebug("Protocol size: ");
+
+        var stream = await _connection.OpenOutboundStreamAsync(QuicStreamType.Unidirectional, _cancellation.Token);
+        logger.LogDebug("Opened stream {StreamId}", stream.Id);
+        
+        await stream.WriteAsync(protocol.Data, _cancellation.Token);
+        await stream.FlushAsync(_cancellation.Token);
+        stream.CompleteWrites();
+
+        await stream.DisposeAsync();
     }
 
     public void Dispose()
@@ -103,8 +117,10 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
         }
     }
 
-    public void Start()
+    public async ValueTask StartAsync()
     {
+        _stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
+        
         CompletionTask = Task.WhenAll(
             Task.Run(StartReceive, _cancellation.Token),
             Task.Run(StartSend, _cancellation.Token));
@@ -176,8 +192,6 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
     {
         if (_stream == null)
             throw new InvalidOperationException("Stream is not available");
-        if (!QuicConnection.IsSupported)
-            throw new NotSupportedException("Quic connection is not supported.");
         
         while (IsRunning)
         {

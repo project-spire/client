@@ -5,6 +5,8 @@ using Spire.Bot;
 using Spire.Bot.Node;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
+using Spire.Core.Protocol;
+using Spire.Protocol;
 using Spire.Protocol.Auth;
 
 var services = new ServiceCollection()
@@ -48,20 +50,17 @@ async Task StartBotAsync(BotContext ctx)
             new CharacterActionNode()
         ]).Run(ctx);
 
-        // var protocol = new AuthClientProtocol
-        // {
-        //     Login = new Login
-        //     {
-        //         Kind = Login.Types.Kind.Enter,
-        //         Token = ctx.Account!.Token,
-        //         CharacterId = ProtocolConvert.ToUuid(ctx.Character!.Id),
-        //     }
-        // };
-        //
         await ctx.Session.ConnectAsync(Config.GameHost, Config.GamePort);
-        ctx.Session.Start();
-        //
-        // await ctx.Session.SendAsync(EgressProtocol.Auth(protocol));
+
+        var login = new LoginProtocol(new Login
+        {
+            Kind = Login.Types.Kind.Enter,
+            Token = ctx.Account!.Token,
+            CharacterId = ctx.Character!.Id.ToUuid()
+        });
+        await ctx.Session.LoginAsync(login);
+        
+        await ctx.Session.StartAsync();
 
         await Task.WhenAny(ctx.Stopped, ctx.Session.CompletionTask);
     }

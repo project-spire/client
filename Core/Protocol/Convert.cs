@@ -1,11 +1,11 @@
 using System.Buffers.Binary;
 using Spire.Protocol;
 
-namespace Spire.Core;
+namespace Spire.Core.Protocol;
 
-public static class ProtocolConvert
+public static class Convert
 {
-    public static Uuid ToUuid(Guid guid)
+    public static Uuid ToUuid(this Guid guid)
     {
         Span<byte> bytes = stackalloc byte[16];
         if (!guid.TryWriteBytes(bytes, bigEndian: true, out _))
