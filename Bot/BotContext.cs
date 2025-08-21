@@ -1,22 +1,22 @@
 using System.Net.Http.Headers;
-using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Spire.Bot.Network;
 using Spire.Core;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
 
 namespace Spire.Bot;
 
-public class BotContext : INodeContext, ISessionContext
+public class BotContext : INodeContext
 {
-    private readonly TaskCompletionSource _stopped = new();
-    
     public readonly ushort BotId;
     public readonly string DevId;
     public readonly ILogger<BotContext> Logger;
     
+    private readonly TaskCompletionSource _stopped = new();
+
     public Session Session { get; }
     public Account? Account { get; set; }
     public Character? Character { get; set; }
@@ -28,7 +28,8 @@ public class BotContext : INodeContext, ISessionContext
         DevId = $"{Config.BotPrefix}_{BotId:D5}";
         Logger = logger;
         
-        Session = new Session(_ => this, Logger);
+        var protocolDispatcher = new BotProtocolDispatcher(Logger, this);
+        Session = new Session(protocolDispatcher, Logger);
     }
 
     public async ValueTask<JsonElement> Request(string url, string data, bool authorization = true)

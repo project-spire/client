@@ -4,8 +4,8 @@ using System.Net.Quic;
 using System.Net.Security;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using Spire.Core.Protocol;
 using Spire.Protocol;
+using Spire.Protocol.Net;
 
 namespace Spire.Core.Network;
 
@@ -31,7 +31,7 @@ public class EgressProtocol(byte[] data, int length, bool pooled)
     }
 }
 
-public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger logger) : IAsyncDisposable, IDisposable
+public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAsyncDisposable, IDisposable
 {
     private const string ApplicationProtocol = "spire";
     
@@ -50,7 +50,7 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
     public async ValueTask ConnectAsync(string host, ushort port)
     {
         if (!QuicConnection.IsSupported)
-            throw new NotSupportedException("Quic connection is not supported.");
+            throw new NotSupportedException("QUIC is not supported");
         
         var endpoint = new IPEndPoint(IPAddress.Parse(host), port);
         if (!IPAddress.TryParse(host, out _))
@@ -76,10 +76,13 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
 
     public async ValueTask LoginAsync(LoginProtocol login)
     {
+        if (!QuicConnection.IsSupported)
+            throw new NotSupportedException("QUIC is not supported");
+        
         var protocol = EgressProtocol.New(login);
         logger.LogDebug("Protocol size: ");
 
-        var stream = await _connection.OpenOutboundStreamAsync(QuicStreamType.Unidirectional, _cancellation.Token);
+        var stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Unidirectional, _cancellation.Token);
         logger.LogDebug("Opened stream {StreamId}", stream.Id);
         
         await stream.WriteAsync(protocol.Data, _cancellation.Token);
@@ -119,7 +122,16 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
 
     public async ValueTask StartAsync()
     {
+        if (!QuicConnection.IsSupported)
+            throw new NotSupportedException("QUIC is not supported");
+        
         _stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
+        var ping = new PingProtocol(new Ping
+        {
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        });
+
+        await SendAsync(EgressProtocol.New(ping));
         
         CompletionTask = Task.WhenAll(
             Task.Run(StartReceive, _cancellation.Token),
@@ -156,7 +168,7 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
             try
             {
                 var protocol = await Receive();
-                ProtocolDispatcher.Dispatch(ctxFactory(this), protocol);
+                dispatcher.Dispatch(protocol);
             }
             catch (OperationCanceledException)
             {
@@ -190,6 +202,9 @@ public sealed class Session(Func<Session, ISessionContext> ctxFactory, ILogger l
 
     private async Task StartSend()
     {
+        if (!QuicConnection.IsSupported)
+            throw new NotSupportedException("QUIC is not supported");
+        
         if (_stream == null)
             throw new InvalidOperationException("Stream is not available");
         

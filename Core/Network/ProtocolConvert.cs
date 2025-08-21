@@ -1,9 +1,9 @@
 using System.Buffers.Binary;
 using Spire.Protocol;
 
-namespace Spire.Core.Protocol;
+namespace Spire.Core.Network;
 
-public static class Convert
+public static class ProtocolConvert
 {
     public static Uuid ToUuid(this Guid guid)
     {

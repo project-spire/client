@@ -8,9 +8,8 @@ namespace Spire.Bot.Handler.Auth;
 public static class LoginResultHandler
 {
     [ProtocolHandler(typeof(LoginResultProtocol))]
-    public static void Handle(ISessionContext ctx, LoginResult result)
+    public static void Handle(LoginResult result, BotContext ctx)
     {
-        var btx = (BotContext)ctx;
-        btx.Logger.LogInformation("Login result: {result}", result.Result.ToString());
+        ctx.Logger.LogInformation("Login result: {result}", result.Result.ToString());
     }
 }

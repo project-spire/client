@@ -14,6 +14,11 @@ config/name="spire"
 config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://asset/icon.svg"
 
+[autoload]
+
+Main="*res://Core/Main.cs"
+NetworkManager="*res://Core/NetworkManager.cs"
+
 [dotnet]
 
 project/assembly_name="spire"

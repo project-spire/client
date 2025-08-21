@@ -4,77 +4,76 @@ using Spire.Protocol;
 
 namespace Spire.Core.Network;
 
-public static class ProtocolDispatcher
+public abstract class ProtocolDispatcher
 {
-    private static readonly Dictionary<ushort, ProtocolHandlerEntry> HandlerEntries = [];
-
-    public static void Register(Assembly assembly)
+    protected static readonly Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> HandlerEntries = [];
+    
+    protected static void Initialize(Assembly assembly, params Type[] additionalParameterTypes)
     {
         var handlers = assembly.GetTypes()
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
             .Where(method => method.IsDefined(typeof(ProtocolHandlerAttribute), false));
-
+        
         foreach (var handler in handlers)
         {
-            RegisterHandler(handler);
+            Register(handler, additionalParameterTypes);
         }
     }
 
-    private static void RegisterHandler(MethodInfo handler)
+    private static void Register(MethodInfo handler, Type[] additionalParameterTypes)
     {
-        var attribute = handler.GetCustomAttribute<ProtocolHandlerAttribute>();
-        if (attribute == null) return;
+        var attribute = handler.GetCustomAttribute<ProtocolHandlerAttribute>()!;
         
         var parameters = handler.GetParameters();
-        if (parameters.Length != 2 ||
-            parameters[0].ParameterType != typeof(ISessionContext))
+        var expectedParameterCount = 1 + additionalParameterTypes.Length;
+        
+        if (parameters.Length != expectedParameterCount)
+        {
             throw new Exception(
-                $"Invalid protocol handler signature: {handler.DeclaringType?.Name}.{handler.Name}");
+                $"Invalid protocol handler signature: {handler.DeclaringType?.Name}.{handler.Name}. " +
+                $"Expected {expectedParameterCount} parameters, got {parameters.Length}");
+        }
         
-        
+        // Validate attribute type
         var protocolWrapperType = attribute.ProtocolType;
-        var protocolDataType = parameters[1].ParameterType;
-        
         if (!typeof(IProtocol).IsAssignableFrom(protocolWrapperType))
+        {
             throw new Exception(
                 $"Protocol type {protocolWrapperType.Name} must implement {nameof(IProtocol)}");
+        }
         
+        // Validate first parameter to be Protocol.
+        var protocolDataType = parameters[0].ParameterType;
         if (!typeof(IMessage).IsAssignableFrom(protocolDataType))
+        {
             throw new Exception(
                 $"Protocol data type {protocolDataType.Name} must implement {nameof(IMessage)}");
+        }
+        
+        // Validate additional parameters
+        for (int i = 0; i < additionalParameterTypes.Length; i++)
+        {
+            var actualType = parameters[i + 1].ParameterType;
+            var expectedType = additionalParameterTypes[i];
+            
+            if (actualType != expectedType)
+            {
+                throw new Exception(
+                    $"Invalid protocol handler signature: {handler.DeclaringType?.Name}.{handler.Name}. " +
+                    $"Parameter {i + 1} expected type {expectedType.Name}, got {actualType.Name}");
+            }
+        }
         
         var instance = (IProtocol)Activator.CreateInstance(protocolWrapperType, [null])!;
         var protocolId = instance.ProtocolId;
         
         var valueProperty = protocolWrapperType.GetProperty("Value")!;
         
-        HandlerEntries[protocolId] = new ProtocolHandlerEntry(handler, valueProperty);
+        HandlerEntries[protocolId] = (handler, valueProperty);
     }
     
-    public static void Dispatch(ISessionContext ctx, IProtocol protocol)
-    {
-        if (!HandlerEntries.TryGetValue(protocol.ProtocolId, out var handlerEntry))
-        {
-            ctx.HandleError(new DispatchException($"Unhandled protocol {nameof(protocol)}"));
-            return;
-        }
-
-        try
-        {
-            var protocolData = handlerEntry.ValueProperty.GetValue(protocol);
-            handlerEntry.Handler.Invoke(null, [ctx, protocolData]);
-        }
-        catch (Exception e)
-        {
-            ctx.HandleError(new DispatchException($"Failed to dispatch protocol {nameof(protocol)}: {e.Message}"));
-        }
-    }
+    public abstract void Dispatch(IProtocol protocol);
 }
-
-internal record ProtocolHandlerEntry(
-    MethodInfo Handler,
-    PropertyInfo ValueProperty
-);
 
 [Serializable]
 public class DispatchException(string message) : Exception(message);

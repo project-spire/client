@@ -2,10 +2,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spire.Bot;
+using Spire.Bot.Network;
 using Spire.Bot.Node;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
-using Spire.Core.Protocol;
 using Spire.Protocol;
 using Spire.Protocol.Auth;
 
@@ -20,7 +20,7 @@ var services = new ServiceCollection()
 var logger = services.GetRequiredService<ILogger<Program>>();
 var loggerFactory = services.GetRequiredService<ILoggerFactory>();
 
-ProtocolDispatcher.Register(Assembly.GetExecutingAssembly());
+BotProtocolDispatcher.Initialize(Assembly.GetExecutingAssembly());
 
 logger.LogInformation("Starting {NumBots} bots...", Config.BotCount);
 

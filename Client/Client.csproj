@@ -2,6 +2,20 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
         <RootNamespace>Spire</RootNamespace>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\Core\Core.csproj" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0-preview.5.25277.114" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Content Include="Core\Log\GodotLogger.cs.uid" />
+      <Content Include="Core\Log\GodotLoggerProvider.cs.uid" />
+      <Content Include="Core\Network\ClientProtocolDispatcher.cs.uid" />
+      <Content Include="Core\Network\NetworkManager.cs.uid" />
+    </ItemGroup>
 </Project>

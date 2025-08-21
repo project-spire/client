@@ -1,6 +1,6 @@
 using Spire.Protocol;
 
-namespace Spire.Core.Protocol;
+namespace Spire.Core.Network;
 
 public readonly struct ProtocolHeader(int length, ushort id)
 {
