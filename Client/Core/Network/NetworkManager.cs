@@ -7,7 +7,6 @@ public partial class NetworkManager : LoggableNode
     public static NetworkManager Instance { get; private set; } = null!;
     
     public Session Session { get; private set; } = null!;
-    private ClientProtocolDispatcher _protocolDispatcher = null!;
 
     public override void _Ready()
     {
@@ -15,7 +14,7 @@ public partial class NetworkManager : LoggableNode
         
         ClientProtocolDispatcher.Initialize();
 
-        _protocolDispatcher = new ClientProtocolDispatcher(Logger);
-        Session = new Session(_protocolDispatcher, Logger);
+        var protocolDispatcher = new ClientProtocolDispatcher(Logger);
+        Session = new Session(protocolDispatcher, Logger);
     }
 }

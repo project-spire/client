@@ -6,7 +6,7 @@ namespace Spire.Core.Log;
 
 public abstract partial class LoggableNode : Node
 {
-    protected ILogger Logger { get; private set; }
+    protected ILogger Logger { get; private set; } = null!;
 
     public override void _Ready()
     {

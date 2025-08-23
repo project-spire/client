@@ -72,24 +72,22 @@ public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAs
         };
         
         _connection = await QuicConnection.ConnectAsync(connectionOptions, _cancellation.Token);
+        logger.LogInformation("Connected to {host}:{port}", host, port);
     }
 
     public async ValueTask LoginAsync(LoginProtocol login)
     {
+        logger.LogInformation("Logging in with: {CharacterId}, Token: {Token}", login.Value.CharacterId, login.Value.Token);
+        
         if (!QuicConnection.IsSupported)
             throw new NotSupportedException("QUIC is not supported");
         
         var protocol = EgressProtocol.New(login);
-        logger.LogDebug("Protocol size: ");
 
-        var stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Unidirectional, _cancellation.Token);
-        logger.LogDebug("Opened stream {StreamId}", stream.Id);
+        await using var stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Unidirectional, _cancellation.Token);
         
         await stream.WriteAsync(protocol.Data, _cancellation.Token);
         await stream.FlushAsync(_cancellation.Token);
-        stream.CompleteWrites();
-
-        await stream.DisposeAsync();
     }
 
     public void Dispose()
