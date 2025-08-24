@@ -7,9 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="..\gen\*.cs" />
-
         <PackageReference Include="Google.Protobuf" Version="3.31.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0-preview.5.25277.114" />
+        
+        <ProjectReference Include="..\Protocol\lib\cs\Protocol\Protocol.csproj" />
     </ItemGroup>
 </Project>
