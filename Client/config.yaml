@@ -1,0 +1,7 @@
+mode: "dev"
+
+game_host: "localhost"
+game_port: 6400
+
+lobby_host: "localhost"
+lobby_port: 8000
