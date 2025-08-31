@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdb30klo3ux1o"]
+
+[ext_resource type="Script" uid="uid://muigr54bny1m" path="res://Lobby/Lobby.cs" id="1_4ktdg"]
+
+[node name="Lobby" type="MarginContainer" node_paths=PackedStringArray("DevIdInput", "StartButton")]
+script = ExtResource("1_4ktdg")
+DevIdInput = NodePath("MenuContainer/StartContainer/DevIdInput")
+StartButton = NodePath("MenuContainer/StartContainer/StartButton")
+
+[node name="MenuContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="StartContainer" type="HBoxContainer" parent="MenuContainer"]
+layout_mode = 2
+
+[node name="DevIdInput" type="LineEdit" parent="MenuContainer/StartContainer"]
+layout_mode = 2
+placeholder_text = "Dev ID"
+
+[node name="StartButton" type="Button" parent="MenuContainer/StartContainer"]
+layout_mode = 2
+text = "START"

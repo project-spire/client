@@ -14,7 +14,5 @@ public class PlayerController
     {
         float lr = 0;
         float fb = 0;
-        
-        if (Input.Is)
     }
 }

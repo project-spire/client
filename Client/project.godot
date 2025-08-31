@@ -10,15 +10,17 @@ config_version=5
 
 [application]
 
-config/name="spire"
+config/name="Client"
+run/main_scene="uid://bdb30klo3ux1o"
 config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://asset/icon.svg"
 
 [autoload]
 
 Main="*res://Core/Main.cs"
-NetworkManager="*res://Core/NetworkManager.cs"
+LobbyManager="*res://Lobby/LobbyManager.cs"
+NetworkManager="*res://Core/Network/NetworkManager.cs"
 
 [dotnet]
 
-project/assembly_name="spire"
+project/assembly_name="Client"

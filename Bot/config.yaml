@@ -1,8 +1,10 @@
 bot_count: 1
 bot_prefix: "bot"
 
-lobby_host: "127.0.0.1"
-lobby_port: 8080
+trust_server_certificate: true
 
-game_host: "127.0.0.1"
+lobby_host: "lobby.spire.dev"
+lobby_port: 8000
+
+game_host: "game.spire.dev"
 game_port: 6400

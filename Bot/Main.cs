@@ -50,7 +50,7 @@ async Task StartBotAsync(BotContext ctx)
             new CharacterActionNode()
         ]).Run(ctx);
 
-        await ctx.Session.ConnectAsync(Config.GameHost, Config.GamePort);
+        await ctx.GameSession.ConnectAsync(Config.GameHost, Config.GamePort);
 
         var login = new LoginProtocol(new Login
         {
@@ -58,11 +58,11 @@ async Task StartBotAsync(BotContext ctx)
             Token = ctx.Account!.Token,
             CharacterId = ctx.Character!.Id.ToUuid()
         });
-        await ctx.Session.LoginAsync(login);
+        await ctx.GameSession.LoginAsync(login);
         
-        await ctx.Session.StartAsync();
+        await ctx.GameSession.StartAsync();
 
-        await Task.WhenAny(ctx.Stopped, ctx.Session.CompletionTask);
+        await Task.WhenAny(ctx.Stopped, ctx.GameSession.CompletionTask);
     }
     catch (Exception e)
     {
