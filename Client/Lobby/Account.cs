@@ -2,7 +2,7 @@ namespace Spire.Lobby;
 
 public abstract record Account
 {
-    public required Guid Id { get; init; }
+    public required Guid AccountId { get; init; }
 }
 
 public record DevAccount : Account

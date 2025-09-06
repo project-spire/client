@@ -1,6 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Spire.Bot.Network;
@@ -19,7 +16,7 @@ public class BotContext : INodeContext
     
     private readonly TaskCompletionSource _stopped = new();
 
-    public Accountant.AccountantClient LobbyClient { get; }
+    public DevAuth.DevAuthClient DevAuthClient { get; }
     public Session GameSession { get; }
     public Account? Account { get; set; }
     public Character? Character { get; set; }
@@ -43,7 +40,7 @@ public class BotContext : INodeContext
         };
         var channel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
         
-        LobbyClient = new Accountant.AccountantClient(channel);
+        DevAuthClient = new DevAuth.DevAuthClient(channel);
         
         var protocolDispatcher = new BotProtocolDispatcher(Logger, this);
         GameSession = new Session(protocolDispatcher, Logger);

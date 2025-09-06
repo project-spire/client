@@ -20,7 +20,7 @@ public partial class Lobby : Node
 
     private void OnStartButtonPressed()
     {
-        _ = _lobbyManager.RequestDevAccountAsync(DevIdInput.Text);
+        _ = _lobbyManager.RequestDevAuthAsync(DevIdInput.Text);
     }
 
     private void OnAccountRequestCompleted()

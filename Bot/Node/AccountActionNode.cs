@@ -20,7 +20,7 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
             };
 
             var deadline = DateTime.UtcNow.AddSeconds(10);
-            var response = await ctx.LobbyClient.GetDevAccountAsync(request, deadline: deadline);
+            var response = await ctx.DevAuthClient.GetDevAccountAsync(request, deadline: deadline);
 			
             // ctx.Account = new Account
             // {

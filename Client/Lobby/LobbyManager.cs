@@ -12,49 +12,32 @@ public partial class LobbyManager : LoggableNode
 {
 	public Account? Account { get; private set; }
 	
-	private Accountant.AccountantClient _client = null!;
-	
 	[Signal] public delegate void AccountRequestCompletedEventHandler();
 	[Signal] public delegate void AccountRequestFailedEventHandler();
-	
-	public override void _Ready()
+
+	public async Task RequestDevAuthAsync(string devId)
 	{
-		base._Ready();
-
-		Logger.LogInformation("Initializing GRPC client to {}", Config.LobbyAddress);
-
-		var handler = new HttpClientHandler();
-		if (Config.Mode == Mode.Dev)
+		if (Config.Mode != Mode.Dev)
 		{
-			handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
-		}
-
-		var options = new GrpcChannelOptions
-		{
-			HttpHandler = handler
-		};
-		var channel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
+			Logger.LogWarning("Dev mode is not enabled!");
+			return;
+		} 
 		
-		_client = new Accountant.AccountantClient(channel);
-		
-		Logger.LogInformation("GRPC client initialized.");
-	}
-
-	public async Task RequestDevAccountAsync(string devId)
-	{
 		try
 		{
+			var client = GetDevAuthClient();
+			
 			var request = new DevAccountRequest
 			{
 				DevId = devId
 			};
 
 			var deadline = DateTime.UtcNow.AddSeconds(10);
-			var response = await _client.GetDevAccountAsync(request, deadline: deadline);
+			var response = await client.GetDevAccountAsync(request, deadline: deadline);
 			
 			Account = new DevAccount
 			{
-				Id = response.Id.ToGuid(),
+				AccountId = response.AccountId.ToGuid(),
 				DevId = devId
 			};
 			
@@ -65,5 +48,19 @@ public partial class LobbyManager : LoggableNode
 			Logger.LogError("Failed to get dev account: {}", e.Message);
 			EmitSignalAccountRequestFailed();
 		}
+	}
+
+	private DevAuth.DevAuthClient GetDevAuthClient()
+	{
+		var options = new GrpcChannelOptions
+		{
+			HttpHandler = new HttpClientHandler
+			{
+				ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+			}
+		};
+		var channel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
+		
+		return new DevAuth.DevAuthClient(channel);
 	}
 }
