@@ -1,6 +1,6 @@
 using System.Reflection;
 using Google.Protobuf;
-using Spire.Protocol;
+using Spire.Protocol.Game;
 
 namespace Spire.Core.Network;
 

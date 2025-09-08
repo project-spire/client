@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Spire.Bot.Network;
@@ -10,15 +11,20 @@ namespace Spire.Bot;
 
 public class BotContext : INodeContext
 {
-    public readonly ushort BotId;
-    public readonly string DevId;
+    public ushort BotId { get; init; }
+    public string DevId { get; init; }
+    public long? AccountId { get; private set; }
+    public string? Token { get; private set; }
+    public GrpcChannel LobbyChannel { get; init; }
     public readonly ILogger<BotContext> Logger;
     
     private readonly TaskCompletionSource _stopped = new();
 
-    public DevAuth.DevAuthClient DevAuthClient { get; }
+    // public DevAuth.DevAuthClient DevAuthClient { get; }
+    
     public Session GameSession { get; }
-    public Account? Account { get; set; }
+    // public Account? Account { get; set; }
+    
     public Character? Character { get; set; }
     public Task Stopped => _stopped.Task;
     
@@ -34,13 +40,24 @@ public class BotContext : INodeContext
             handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
         }
 
+        var credentials = ChannelCredentials.Create(
+            ChannelCredentials.SecureSsl,
+            CallCredentials.FromInterceptor((_, metadata) =>
+            {
+                if (Token is not null)
+                    metadata.Add("authentication", Token);
+                
+                return Task.CompletedTask;
+            }));
+
         var options = new GrpcChannelOptions
         {
-            HttpHandler = handler
+            HttpHandler = handler,
+            Credentials = credentials
         };
-        var channel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
+        LobbyChannel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
         
-        DevAuthClient = new DevAuth.DevAuthClient(channel);
+        // DevAuthClient = new DevAuth.DevAuthClient(channel);
         
         var protocolDispatcher = new BotProtocolDispatcher(Logger, this);
         GameSession = new Session(protocolDispatcher, Logger);
@@ -53,5 +70,13 @@ public class BotContext : INodeContext
         
         GameSession.Stop();
         _stopped.TrySetResult();
+    }
+
+    public void OnDevAccountAcquired(long accountId, string token)
+    {
+        Logger.LogInformation("Dev Account acquired: {accountId}, {token}", accountId, token);
+        
+        AccountId = accountId;
+        Token = token;
     }
 }

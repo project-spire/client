@@ -1,6 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Spire.Protocol;
+using Spire.Protocol.Game;
 
 namespace Spire.Core.Network;
 

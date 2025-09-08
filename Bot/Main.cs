@@ -5,9 +5,8 @@ using Spire.Bot;
 using Spire.Bot.Network;
 using Spire.Bot.Node;
 using Spire.Core.BehaviorTree;
-using Spire.Core.Network;
-using Spire.Protocol;
-using Spire.Protocol.Auth;
+using Spire.Protocol.Game;
+using Spire.Protocol.Game.Auth;
 
 var services = new ServiceCollection()
     .AddLogging(configure =>
@@ -55,8 +54,8 @@ async Task StartBotAsync(BotContext ctx)
         var login = new LoginProtocol(new Login
         {
             Kind = Login.Types.Kind.Enter,
-            Token = ctx.Account!.Token,
-            CharacterId = ctx.Character!.Id.ToUuid()
+            Token = ctx.Token,
+            CharacterId = ctx.Character!.Id
         });
         await ctx.GameSession.LoginAsync(login);
         

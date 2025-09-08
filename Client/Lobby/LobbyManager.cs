@@ -37,7 +37,7 @@ public partial class LobbyManager : LoggableNode
 			
 			Account = new DevAccount
 			{
-				AccountId = response.AccountId.ToGuid(),
+				AccountId = response.AccountId,
 				DevId = devId
 			};
 			

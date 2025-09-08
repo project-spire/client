@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Spire.Core.Network;
-using Spire.Protocol;
-using Spire.Protocol.Auth;
+using Spire.Protocol.Game;
+using Spire.Protocol.Game.Auth;
 
 namespace Spire.Bot.Handler.Auth;
 

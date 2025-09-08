@@ -12,28 +12,19 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
 {
     private static async ValueTask<NodeState> RequestAccount(BotContext ctx)
     {
-        try
+        var devAuthClient = new DevAuth.DevAuthClient(ctx.LobbyChannel);
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        
+        var devAccountRequest = new DevAccountRequest
         {
-            var request = new DevAccountRequest
-            {
-                DevId = ctx.DevId
-            };
+            DevId = ctx.DevId
+        };
+        var devAccountResponse = await devAuthClient.GetDevAccountAsync(devAccountRequest, deadline: deadline);
 
-            var deadline = DateTime.UtcNow.AddSeconds(10);
-            var response = await ctx.DevAuthClient.GetDevAccountAsync(request, deadline: deadline);
-			
-            // ctx.Account = new Account
-            // {
-            //     Id = response.Id.ToGuid(),
-            //     Token = 
-            // };
-        }
-        catch (Exception e)
-        {
-            ctx.Logger.LogError("Failed to get dev account: {}", e.Message);
-            
-            return NodeState.Failure;
-        }
+        var tokenRequest = new DevTokenRequest();
+        var tokenResponse = await devAuthClient.GetTokenAsync(tokenRequest, deadline: deadline);
+        
+        ctx.OnDevAccountAcquired(devAccountResponse.AccountId, tokenResponse.Token);
         
         // var (found, accountId) = await FindAccount(ctx);
         // if (!found)

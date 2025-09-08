@@ -5,7 +5,8 @@ using System.Net.Security;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Spire.Protocol;
-using Spire.Protocol.Net;
+using Spire.Protocol.Game;
+using Spire.Protocol.Game.Net;
 
 namespace Spire.Core.Network;
 

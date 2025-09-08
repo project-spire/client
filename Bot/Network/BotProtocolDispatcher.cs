@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Spire.Core.Network;
-using Spire.Protocol;
+using Spire.Protocol.Game;
 
 namespace Spire.Bot.Network;
 
