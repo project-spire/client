@@ -57,8 +57,6 @@ public class BotContext : INodeContext
         };
         LobbyChannel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
         
-        // DevAuthClient = new DevAuth.DevAuthClient(channel);
-        
         var protocolDispatcher = new BotProtocolDispatcher(Logger, this);
         GameSession = new Session(protocolDispatcher, Logger);
     }
@@ -78,5 +76,10 @@ public class BotContext : INodeContext
         
         AccountId = accountId;
         Token = token;
+    }
+
+    public void OnCharacterAcquired(Protocol.Character character)
+    {
+        Logger.LogInformation("Dev Account acquired: {name}", character.Name);
     }
 }

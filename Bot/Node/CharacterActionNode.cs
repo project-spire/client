@@ -1,4 +1,6 @@
+using Google.Protobuf.WellKnownTypes;
 using Spire.Core.BehaviorTree;
+using Spire.Protocol;
 using Spire.Protocol.Lobby;
 
 namespace Spire.Bot.Node;
@@ -7,68 +9,29 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
 {
     private static async ValueTask<NodeState> RequestCharacter(BotContext ctx)
     {
-        var charactersClient = new Characters.
-        
-        // var characters = await ListCharacter(ctx);
-        // if (characters.Count == 0)
-        // {
-        //     ctx.Character = await CreateCharacter(ctx);
-        // }
-        // else
-        // {
-        //     ctx.Character = characters[0];
-        // }
+        var client = new Characters.CharactersClient(ctx.LobbyChannel);
+        var deadline = DateTime.UtcNow.AddSeconds(10);
 
+        var listCharactersResponse = await client.ListCharactersAsync(new Empty(), deadline: deadline);
+        
+        Protocol.Character character;
+        if (listCharactersResponse.Characters.Count == 0)
+        {
+            var createCharacterRequest = new CreateCharacterRequest
+            {
+                Name = $"{Config.BotPrefix}{ctx.BotId:D4}",
+                Race = Race.Human
+            };
+            var createCharacterResponse = await client.CreateCharacterAsync(createCharacterRequest, deadline: deadline);
+            
+            character = createCharacterResponse.Character;
+        }
+        else
+        {
+            character = listCharactersResponse.Characters[0];
+        }
+        
+        ctx.OnCharacterAcquired(character);
         return NodeState.Success;
     }
-    
-    // private static async ValueTask<List<Character>> ListCharacter(BotContext ctx)
-    // {
-    //     var url = Config.LobbyAddress + "/character/list";
-    //     
-    //     var resp = await ctx.Request(url, string.Empty);
-    //     var rawCharacters = resp.GetProperty("characters");
-    //     var characters = new List<Character>();
-    //     
-    //     for (var i = 0; i < rawCharacters.GetArrayLength(); i++)
-    //     {
-    //         var rawCharacter = rawCharacters[i];
-    //         if (!Guid.TryParse(rawCharacter.GetProperty("id").GetString(), out var characterId))
-    //             throw new Exception("Invalid UUID from character id");
-    //         
-    //         characters.Add(new Character
-    //         (
-    //             Id: characterId,
-    //             Name: rawCharacter.GetProperty("name").GetString()!,
-    //             Race: rawCharacter.GetProperty("race").GetString()!
-    //         ));
-    //     }
-    //     
-    //     return characters;
-    // }
-    //
-    // private static async ValueTask<Character> CreateCharacter(BotContext ctx)
-    // {
-    //     var url = Config.LobbyAddress + "/character/create";
-    //     var data = JsonSerializer.Serialize(new Dictionary<string, object>
-    //     {
-    //         ["character_name"] = ctx.DevId + "_c",
-    //         ["character_race"] = "Human"
-    //     });
-    //     
-    //     var resp = await ctx.Request(url, data);
-    //     var rawCharacter = resp.GetProperty("character");
-    //     if (!Guid.TryParse(rawCharacter.GetProperty("id").GetString(), out var characterId))
-    //         throw new Exception("Invalid UUID from character id");
-    //     
-    //     var character = new Character
-    //     (
-    //         Id: characterId,
-    //         Name: rawCharacter.GetProperty("name").GetString()!,
-    //         Race: rawCharacter.GetProperty("race").GetString()!
-    //     );
-    //     
-    //     ctx.Logger.LogInformation("Created character {}", character.Id);
-    //     return character;
-    // }
 }

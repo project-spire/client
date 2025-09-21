@@ -48,6 +48,8 @@ async Task StartBotAsync(BotContext ctx)
             new AccountActionNode(),
             new CharacterActionNode()
         ]).Run(ctx);
+        await ctx.LobbyChannel.ShutdownAsync();
+        ctx.LobbyChannel.Dispose();
 
         await ctx.GameSession.ConnectAsync(Config.GameHost, Config.GamePort);
 
