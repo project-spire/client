@@ -1,7 +1,5 @@
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using Spire.Core;
 using Spire.Core.BehaviorTree;
+using Spire.Protocol.Lobby;
 
 namespace Spire.Bot.Node;
 
@@ -9,6 +7,8 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
 {
     private static async ValueTask<NodeState> RequestCharacter(BotContext ctx)
     {
+        var charactersClient = new Characters.
+        
         // var characters = await ListCharacter(ctx);
         // if (characters.Count == 0)
         // {
