@@ -1,6 +1,6 @@
-<Project Sdk="Godot.NET.Sdk/4.4.1">
+<Project Sdk="Godot.NET.Sdk/4.5.1">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -11,7 +11,7 @@
         <ProjectReference Include="..\Core\Core.csproj" />
         
         <PackageReference Include="YamlDotNet" Version="16.3.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0-preview.5.25277.114" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     </ItemGroup>
     
     <ItemGroup>

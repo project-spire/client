@@ -27,7 +27,7 @@ public partial class LobbyManager : LoggableNode
 		{
 			var client = GetDevAuthClient();
 			
-			var request = new DevAccountRequest
+			var request = new GetDevAccountRequest
 			{
 				DevId = devId
 			};

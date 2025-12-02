@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Spire.Core</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.31.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.33.1" />
         
         <ProjectReference Include="..\Protocol\lib\cs\Protocol\Protocol.csproj" />
     </ItemGroup>

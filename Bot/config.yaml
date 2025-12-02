@@ -3,8 +3,8 @@ bot_prefix: "bot"
 
 trust_server_certificate: true
 
-lobby_host: "lobby.spire.dev"
+lobby_host: "lobby.spire.localhost"
 lobby_port: 8000
 
-game_host: "game.spire.dev"
+game_host: "game.spire.localhost"
 game_port: 6400
