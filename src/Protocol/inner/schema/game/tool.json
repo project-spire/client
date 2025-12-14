@@ -1,0 +1,15 @@
+{
+    "$schema": "syntax/category.json",
+    "category": "tool",
+    "offset": 200,
+    "protocols": [
+        {
+            "protocol": "Cheat",
+            "target": "server"
+        },
+        {
+            "protocol": "CheatResult",
+            "target": "client"
+        }
+    ]
+}

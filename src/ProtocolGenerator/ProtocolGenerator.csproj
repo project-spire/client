@@ -9,8 +9,8 @@
         <OutputItemType>Analyzer</OutputItemType>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <!-- IsRoslynComponent>true</IsRoslynComponent -->
-        <!-- EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules -->
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>

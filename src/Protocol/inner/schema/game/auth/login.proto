@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package spire.protocol.game.auth;
+
+// Client -> Server
+message Login {
+    enum Kind {
+        Enter = 0;
+        Transfer = 1;
+    }
+
+    Kind kind = 1;
+    string token = 2;
+    int64 character_id = 3;
+}

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "character_data.proto";
+
+package spire.protocol;
+
+message PlayerData {
+    CharacterData character_data = 1;
+}

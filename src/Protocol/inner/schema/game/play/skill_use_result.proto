@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package spire.protocol.game.play;
+
+// Client <- Server
+message SkillUseResult {
+    enum Result {
+        Ok = 0;
+        CoolTime = 1;
+        InvalidTarget = 2;
+        InvalidSkillDataId = 3;
+    }
+
+    Result result = 1;
+    uint64 timestamp = 2;
+    uint32 skill_data_id = 3;
+}

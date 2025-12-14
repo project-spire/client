@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package spire.protocol.game.net;
+
+// Client -> Server
+message ZoneTransferReady {
+    int64 zone_id = 1;
+}

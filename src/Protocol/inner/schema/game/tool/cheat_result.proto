@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package spire.protocol.game.tool;
+
+message CheatResult {
+    enum Result {
+        Ok = 0;
+        Failed = 1;
+        ArgumentInvalid = 2;
+        ArgumentCountMismatch = 3;
+    }
+
+    Result result = 1;
+    string message = 2;
+}

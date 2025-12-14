@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package spire.protocol.game.play;
+
+// Client <- Server
+message EntityDespawn {
+    enum Reason {
+        System = 0;
+        Death = 1;
+    }
+
+    uint64 entity = 1;
+    Reason reason = 2;
+}

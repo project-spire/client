@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package spire.protocol.game.tool;
+
+message Cheat {
+    enum Kind {
+        Item = 0;
+    }
+    
+    Kind kind = 1;
+    repeated string arguments = 2;
+}

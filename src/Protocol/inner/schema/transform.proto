@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "vector.proto";
+
+package spire.protocol;
+
+message Transform {
+    Vector3 position = 1;
+    Vector2 direction = 2;
+}

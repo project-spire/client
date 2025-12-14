@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package spire.protocol.game.play;
+
+import "character_data.proto";
+import "item_data.proto";
+import "player_data.proto";
+import "transform.proto";
+
+// Client <- Server
+message EntitySpawn {
+    uint64 entity = 1;
+    Transform transform = 2;
+
+    oneof data {
+        PlayerData player = 10;
+        CharacterData character = 11;
+        ItemData item = 12;
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "$schema": "syntax/category.json",
+    "category": "net",
+    "offset": 100,
+    "protocols": [
+        {
+            "protocol": "Ping",
+            "target": "all",
+            "handler": "global"
+        },
+        {
+            "protocol": "Pong",
+            "target": "all",
+            "handler": "global"
+        },
+        {
+            "protocol": "ZoneTransfer",
+            "target": "server",
+            "handler": "global"
+        },
+        {
+            "protocol": "ZoneTransferResult",
+            "target": "client"
+        },
+        {
+            "protocol": "ZoneTransferReady",
+            "target": "server",
+            "handler": "global"
+        },
+        {
+            "protocol": "ZoneTransferReadyResult",
+            "target": "client"
+        }
+    ]
+}

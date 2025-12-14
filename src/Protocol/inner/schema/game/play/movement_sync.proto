@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "transform.proto";
+
+package spire.protocol.game.play;
+
+message MovementState {
+    enum Motion {
+        Idle = 0;
+        Walking = 1;
+        Running = 2;
+        Rolling = 3;
+        Jumping = 4;
+    }
+
+    uint64 entity = 1;
+    Motion motion = 2;
+    Transform transform = 3;
+}
+
+// Client <- Server
+message MovementSync {
+    uint64 timestamp = 1;
+    repeated MovementState states = 2;
+}

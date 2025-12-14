@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package spire.protocol.game.play;
+
+// Client <- Server
+message SkillCancelResult {
+    uint64 timestamp = 1;
+    uint32 skill_data_id = 2;
+    bool can_cancel = 3;
+    bool is_cancelled = 4;
+}

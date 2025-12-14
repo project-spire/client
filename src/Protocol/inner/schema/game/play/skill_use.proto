@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "vector.proto";
+import "google/protobuf/empty.proto";
+
+package spire.protocol.game.play;
+
+// Client -> Server
+message SkillUse {
+    uint64 timestamp = 1;
+    uint32 skill_data_id = 2;
+    oneof target {
+        google.protobuf.Empty target_none = 3;
+        Vector3 target_position = 4;
+        Vector3 target_direction = 5;
+        uint64 target_entity = 6;
+    }
+}
