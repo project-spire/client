@@ -127,7 +127,7 @@ public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAs
         _stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
         var ping = new PingProtocol(new Ping
         {
-            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         });
 
         await SendAsync(EgressProtocol.New(ping));

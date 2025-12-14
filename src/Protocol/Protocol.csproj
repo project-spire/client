@@ -20,7 +20,8 @@
     
     <ItemGroup>
         <ProjectReference Include="..\ProtocolGenerator\ProtocolGenerator.csproj"
-                          ReferenceOutputAssembly="false" />
+                          ReferenceOutputAssembly="false"
+                          OutputItemType="Analyzer" />
         <CompilerVisibleProperty Include="SchemaDirectory" />
         <AdditionalFiles Include="$(SchemaDirectory)\game\*.json" />
     </ItemGroup>
