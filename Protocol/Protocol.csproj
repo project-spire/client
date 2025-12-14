@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Spire.Protocol</RootNamespace>
+        
+        <SchemaDirectory>$(MSBuildProjectDirectory)\inner\schema</SchemaDirectory>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.33.2" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.76.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+    
+    <ItemGroup>
+<!--        <ProjectReference Include="ProtocolGenerator\ProtocolGenerator.csproj"-->
+<!--                          OutputItemType="Analyzer"-->
+<!--                          ReferenceOutputAssembly="false" />-->
+        <ProjectReference Include="..\ProtocolGenerator\ProtocolGenerator.csproj"
+                          ReferenceOutputAssembly="false" />
+        <CompilerVisibleProperty Include="SchemaDirectory" />
+        <AdditionalFiles Include="$(SchemaDirectory)\game\*.json" />
+    </ItemGroup>
+    
+    <Target Name="DebugSchemaDirectory" BeforeTargets="Build">
+        <Message Text="SchemaDirectory: $(SchemaDirectory)" Importance="high" />
+        <ItemGroup>
+            <JsonFilesFound Include="$(SchemaDirectory)\game\*.json" />
+        </ItemGroup>
+        <Message Text="Found JSON files: @(JsonFilesFound)" Importance="high" />
+        <Message Text="AdditionalFiles: @(AdditionalFiles)" Importance="high" />
+    </Target>
+    
+    <ItemGroup>
+        <Protobuf Include="$(SchemaDirectory)\*.proto"
+                  ProtoRoot="$(SchemaDirectory)"
+                  GrpcServices="None" />
+        <Protobuf Include="$(SchemaDirectory)\lobby\**\*.proto"
+                  ProtoRoot="$(SchemaDirectory)"
+                  GrpcServices="Client" />
+        <Protobuf Include="$(SchemaDirectory)\game\**\*.proto"
+                  ProtoRoot="$(SchemaDirectory)"
+                  GrpcServices="None" />
+    </ItemGroup>
+    
+<!--    <ItemGroup>-->
+<!--        <Folder Include="Protocol\" />-->
+<!--    </ItemGroup>-->
+</Project>

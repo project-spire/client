@@ -1,1 +1,7 @@
 
+[submodule "Protocol/inner"]
+	path = Protocol/inner
+	url = git@github.com:project-spire/protocol.git
+[submodule "Data/inner"]
+	path = Data/inner
+	url = git@github.com:project-spire/data.git

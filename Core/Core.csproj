@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" Version="3.33.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.33.2" />
         
-        <ProjectReference Include="..\Protocol\lib\cs\Protocol\Protocol.csproj" />
+        <ProjectReference Include="..\Protocol\Protocol.csproj" />
     </ItemGroup>
 </Project>
