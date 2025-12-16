@@ -6,5 +6,6 @@ trust_server_certificate: true
 lobby_host: "lobby.spire.localhost"
 lobby_port: 8000
 
-game_host: "game.spire.localhost"
+#game_host: "game.spire.localhost"
+game_host: "127.0.0.1"
 game_port: 6400

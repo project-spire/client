@@ -78,8 +78,10 @@ public class BotContext : INodeContext
         Token = token;
     }
 
-    public void OnCharacterAcquired(Protocol.Character character)
+    public void OnCharacterAcquired(Protocol.CharacterData characterData)
     {
-        Logger.LogInformation("Dev Account acquired: {name}", character.Name);
+        Logger.LogInformation("Dev Account acquired: {name}", characterData.Name);
+
+        Character = new Character(characterData.Id, characterData.Name, characterData.Race.ToString());
     }
 }

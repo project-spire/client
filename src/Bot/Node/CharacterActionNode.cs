@@ -14,7 +14,7 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
 
         var listCharactersResponse = await client.ListCharactersAsync(new Empty(), deadline: deadline);
         
-        Protocol.Character character;
+        Protocol.CharacterData characterData;
         if (listCharactersResponse.Characters.Count == 0)
         {
             var createCharacterRequest = new CreateCharacterRequest
@@ -24,14 +24,14 @@ public class CharacterActionNode() : ActionNode(ctx => RequestCharacter((BotCont
             };
             var createCharacterResponse = await client.CreateCharacterAsync(createCharacterRequest, deadline: deadline);
             
-            character = createCharacterResponse.Character;
+            characterData = createCharacterResponse.Character;
         }
         else
         {
-            character = listCharactersResponse.Characters[0];
+            characterData = listCharactersResponse.Characters[0];
         }
         
-        ctx.OnCharacterAcquired(character);
+        ctx.OnCharacterAcquired(characterData);
         return NodeState.Success;
     }
 }

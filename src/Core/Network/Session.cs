@@ -85,7 +85,7 @@ public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAs
         
         var protocol = EgressProtocol.New(login);
 
-        await using var stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Unidirectional, _cancellation.Token);
+        await using var stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
         
         await stream.WriteAsync(protocol.Data, _cancellation.Token);
         await stream.FlushAsync(_cancellation.Token);

@@ -15,7 +15,7 @@ public static class Config
 
     static Config()
     {
-        var data = File.ReadAllText("config.yaml");
+        var data = File.ReadAllText("Config.yaml");
         var deserializer = new Deserializer();
         var config = deserializer.Deserialize<Dictionary<string, object>>(data);
         
