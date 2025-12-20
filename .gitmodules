@@ -1,6 +1,1 @@
-[submodule "data"]
-	path = data
-	url = git@github.com:project-spire/data.git
-[submodule "protocol"]
-	path = protocol
-	url = git@github.com:project-spire/protocol.git
+
