@@ -1,7 +1,7 @@
 <Solution>
-    <Project Path="src/ProtocolGenerator/ProtocolGenerator.csproj" />
-    <Project Path="src/Protocol/Protocol.csproj" />
-    <Project Path="src/Core/Core.csproj" />
-    <Project Path="src/Client/Client.csproj" />
-    <Project Path="src/Bot/Bot.csproj" />
+    <Project Path="Bot/Bot.csproj" />
+    <Project Path="Core/Core.csproj" />
+    <Project Path="Engine\Engine.csproj" />
+    <Project Path="Protocol/Protocol.csproj" />
+    <Project Path="ProtocolGenerator/ProtocolGenerator.csproj" />
 </Solution>

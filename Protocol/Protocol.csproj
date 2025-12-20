@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Spire.Protocol</RootNamespace>
         
-        <SchemaDirectory>$(SolutionDir)\protocol\schema</SchemaDirectory>
+        <SchemaDirectory>$(MSBuildProjectDirectory)\Inner\schema</SchemaDirectory>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     </PropertyGroup>
     

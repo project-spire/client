@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Client"
+config/name="Spire"
 run/main_scene="uid://bdb30klo3ux1o"
 config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://asset/icon.svg"
@@ -23,4 +23,4 @@ NetworkManager="*res://Core/Network/NetworkManager.cs"
 
 [dotnet]
 
-project/assembly_name="Client"
+project/assembly_name="Engine"

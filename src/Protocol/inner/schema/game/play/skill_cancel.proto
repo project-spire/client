@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package spire.protocol.game.play;
-
-// Client -> Server
-message SkillCancel {
-    uint64 timestamp = 1;
-    uint32 skill_data_id = 2;
-}
