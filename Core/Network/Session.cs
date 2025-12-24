@@ -69,7 +69,9 @@ public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAs
             {
                 ApplicationProtocols = [new SslApplicationProtocol(ApplicationProtocol)],
                 RemoteCertificateValidationCallback = (_, _, _, _) => true
-            }
+            },
+            
+            KeepAliveInterval = TimeSpan.FromSeconds(10)
         };
         
         _connection = await QuicConnection.ConnectAsync(connectionOptions, _cancellation.Token);
@@ -85,10 +87,10 @@ public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAs
         
         var protocol = EgressProtocol.New(login);
 
-        await using var stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
+        _stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
         
-        await stream.WriteAsync(protocol.Data, _cancellation.Token);
-        await stream.FlushAsync(_cancellation.Token);
+        await _stream.WriteAsync(protocol.Data, _cancellation.Token);
+        await _stream.FlushAsync(_cancellation.Token);
     }
 
     public void Dispose()
@@ -124,7 +126,7 @@ public sealed class Session(ProtocolDispatcher dispatcher, ILogger logger) : IAs
         if (!QuicConnection.IsSupported)
             throw new NotSupportedException("QUIC is not supported");
         
-        _stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
+        // _stream = await _connection!.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, _cancellation.Token);
         var ping = new PingProtocol(new Ping
         {
             Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
