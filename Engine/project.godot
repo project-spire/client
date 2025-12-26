@@ -18,7 +18,6 @@ config/icon="res://asset/icon.svg"
 [autoload]
 
 Main="*res://Core/Main.cs"
-LobbyManager="*res://Lobby/LobbyManager.cs"
 NetworkManager="*res://Core/Network/NetworkManager.cs"
 
 [dotnet]

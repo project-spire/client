@@ -9,14 +9,15 @@ public partial class Main : Node
 {
     public ServiceProvider? ServiceProvider { get; private set; }
 
-    public override void _Ready()
+    public override void _EnterTree()
     {
         var services = new ServiceCollection();
         
         services.AddLogging(builder =>
         {
             builder.ClearProviders();
-            builder.AddProvider(new GodotLoggerProvider(LogLevel.Debug));
+            builder.AddProvider(new GodotLoggerProvider(Config.LogLevel));
+            builder.SetMinimumLevel(Config.LogLevel);
         });
         
         ServiceProvider = services.BuildServiceProvider();

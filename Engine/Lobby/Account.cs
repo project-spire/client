@@ -3,6 +3,7 @@ namespace Spire.Lobby;
 public abstract record Account
 {
     public required long AccountId { get; init; }
+    public required string Token { get; init; }
 }
 
 public record DevAccount : Account

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://j1s4a4adamcw"]
+
+[ext_resource type="Script" uid="uid://ddswyrqwlpt7t" path="res://Lobby/CharacterSlot.cs" id="1_gyro7"]
+
+[node name="CharacterSlot" type="Node"]
+script = ExtResource("1_gyro7")

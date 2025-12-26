@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 
 namespace Spire.Core;
@@ -5,6 +6,7 @@ namespace Spire.Core;
 public static class Config
 {
     public static Mode Mode { get; }
+    public static LogLevel LogLevel { get; }
     
     public static string LobbyHost { get; }
     public static ushort LobbyPort { get; }
@@ -30,6 +32,16 @@ public static class Config
             "dev" => Mode.Dev,
             "release" => Mode.Release,
             _ => Mode.Release
+        };
+        LogLevel = config["log_level"] switch
+        {
+            "trace" => LogLevel.Trace,
+            "debug" => LogLevel.Debug,
+            "info" => LogLevel.Information,
+            "warn" => LogLevel.Warning,
+            "error" => LogLevel.Error,
+            "crit" => LogLevel.Critical,
+            _ => LogLevel.Information,
         };
     }
 }

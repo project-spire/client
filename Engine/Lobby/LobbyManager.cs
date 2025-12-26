@@ -26,18 +26,21 @@ public partial class LobbyManager : LoggableNode
 		try
 		{
 			var client = GetDevAuthClient();
+			var deadline = DateTime.UtcNow.AddSeconds(10);
 			
-			var request = new GetDevAccountRequest
+			var accountRequest = new GetDevAccountRequest
 			{
 				DevId = devId
 			};
+			var accountResponse = await client.GetDevAccountAsync(accountRequest, deadline: deadline);
 
-			var deadline = DateTime.UtcNow.AddSeconds(10);
-			var response = await client.GetDevAccountAsync(request, deadline: deadline);
+			var tokenRequest = new GetDevTokenRequest();
+			var tokenResponse = await client.GetDevTokenAsync(tokenRequest, deadline: deadline);
 			
 			Account = new DevAccount
 			{
-				AccountId = response.AccountId,
+				AccountId = accountResponse.AccountId,
+				Token = tokenResponse.Token,
 				DevId = devId
 			};
 			

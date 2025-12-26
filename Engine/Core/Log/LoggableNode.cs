@@ -8,7 +8,7 @@ public abstract partial class LoggableNode : Node
 {
     protected ILogger Logger { get; private set; } = null!;
 
-    public override void _Ready()
+    public override void _EnterTree()
     {
         var loggerFactory = GetNode<Main>("/root/Main").ServiceProvider!.GetRequiredService<ILoggerFactory>();
         Logger = loggerFactory.CreateLogger(GetType().Name);

@@ -6,7 +6,7 @@ namespace Spire.Core.Log;
 public class GodotLogger(string categoryName, LogLevel minLogLevel = LogLevel.Information)
 	: ILogger
 {
-	public IDisposable BeginScope<TState>(TState state) => null!;
+	IDisposable ILogger.BeginScope<TState>(TState state) => null!;
 
 	public bool IsEnabled(LogLevel logLevel) => logLevel >= minLogLevel;
 
@@ -21,32 +21,20 @@ public class GodotLogger(string categoryName, LogLevel minLogLevel = LogLevel.In
 			return;
 		
 		var timestamp = DateTime.UtcNow.ToString("HH:mm:ssZ");
-		var message = formatter(state, exception);
-		var logMessage = $"[{timestamp}] [{logLevel}] {categoryName}: {message}";
-		
-		switch (logLevel)
+		var logTag = logLevel switch
 		{
-			case LogLevel.Critical:
-				GD.PrintRich($"[color=rd][b] CRIT[b][/color] {logMessage}");
-				break;
-			case LogLevel.Error:
-				GD.PrintRich($"[color=rd]ERROR[/color] {logMessage}");
-				break;
-			case LogLevel.Warning:
-				GD.PrintRich($"[color=rd] WARN[/color] {logMessage}");
-				break;
-			case LogLevel.Debug:
-				GD.PrintRich($"[color=rd]DEBUG[/color] {logMessage}");
-				break;
-			case LogLevel.Trace:
-				GD.PrintRich($"[color=rd]TRACE[/color] {logMessage}");
-				break;
-			case LogLevel.Information:
-			case LogLevel.None:
-			default:
-				GD.Print(logMessage);
-				break;
-		}
+			LogLevel.Trace => "[color=gray]TRACE[/color]",
+			LogLevel.Debug => "[color=gray]DEBUG[/color]",
+			LogLevel.Information => "[color=green] INFO[/color]",
+			LogLevel.Warning => "[color=yellow] WARN[/color]",
+			LogLevel.Error => "[color=red]ERROR[/color]",
+			LogLevel.Critical => "[color=red] CRIT[/color]",
+			_ => ""
+		};
+		var message = formatter(state, exception);
+		
+		GD.PrintRich($"{timestamp} [{logTag}] {categoryName}: {message}");
+		
 
 		if (exception == null) return;
 		

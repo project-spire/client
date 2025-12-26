@@ -4,17 +4,13 @@ namespace Spire.Core.Network;
 
 public partial class NetworkManager : LoggableNode
 {
-    public static NetworkManager Instance { get; private set; } = null!;
-    
-    public Session Session { get; private set; } = null!;
+    public static Session Session { get; private set; } = null!;
 
     public override void _Ready()
     {
-        Instance = this;
-        
-        ClientProtocolDispatcher.Initialize();
+        EngineProtocolDispatcher.Initialize();
 
-        var protocolDispatcher = new ClientProtocolDispatcher(Logger);
+        var protocolDispatcher = new EngineProtocolDispatcher(Logger);
         Session = new Session(protocolDispatcher, Logger);
     }
 }

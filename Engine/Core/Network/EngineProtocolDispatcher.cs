@@ -4,7 +4,7 @@ using Spire.Protocol.Game;
 
 namespace Spire.Core.Network;
 
-public class ClientProtocolDispatcher(ILogger logger) : ProtocolDispatcher
+public class EngineProtocolDispatcher(ILogger logger) : ProtocolDispatcher
 {
     public static void Initialize()
     {
