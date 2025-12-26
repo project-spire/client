@@ -17,12 +17,10 @@ namespace Spire.Lobby;
 public partial class Lobby : LoggableNode
 {
     [Export] public required LineEdit DevIdInput;
-    [Export] public required Button StartButton;
-    [Export] private PackedScene CharacterSlotScene { get; set; } = null!;
+    [Export] public required Button LobbyStartButton;
+    [Export] public required Button GameStartButton;
+    [Export] public required PackedScene CharacterSlotScene;
     
-    // private LobbyManager _lobbyManager = null!;
-    
-    // public Account? Account { get; private set; }
     private Account? _account;
     
     private const string ConfigFilePath = "user://lobby.cfg";
@@ -30,7 +28,8 @@ public partial class Lobby : LoggableNode
 
     public override void _Ready()
     {
-        StartButton.Pressed += OnStartButtonPressed;
+        LobbyStartButton.Pressed += OnLobbyStartButtonPressed;
+        GameStartButton.Pressed += OnGameStartButtonPressed;
         
         Logger.LogInformation("Loading config file \"{ConfigFilePath}\"", ProjectSettings.GlobalizePath(ConfigFilePath));
         if (_config.Load(ConfigFilePath) == Error.Ok)
@@ -43,12 +42,17 @@ public partial class Lobby : LoggableNode
         }
     }
 
-    private void OnStartButtonPressed()
+    private void OnLobbyStartButtonPressed()
     {
         _ = RequestDevAuthAsync(DevIdInput.Text);
         
         _config.SetValue("Dev", "LastId", DevIdInput.Text);
         _config.Save(ConfigFilePath);
+    }
+
+    private void OnGameStartButtonPressed()
+    {
+        
     }
 
     private async Task RequestDevAuthAsync(string devId)
@@ -126,7 +130,7 @@ public partial class Lobby : LoggableNode
                 characterSlots.Add(characterSlot);
             }
 
-            CallDeferred(MethodName.OnCharacterSlots, characterSlots);
+            CallDeferred(MethodName.OnCharacterSlots, characterSlots.ToArray());
         }
         catch (Exception e)
         {
@@ -135,9 +139,9 @@ public partial class Lobby : LoggableNode
         }
     }
 
-    private void OnCharacterSlots(List<CharacterSlot> characterSlots)
+    private void OnCharacterSlots(CharacterSlot[] characterSlots)
     {
-        // Logger.LogInformation("Characters list response: {}", characters);
+        Logger.LogInformation("Characters list response: {}", characterSlots);
     }
 
     // private void OnAccountRequestCompleted()
