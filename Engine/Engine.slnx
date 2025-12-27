@@ -1,0 +1,7 @@
+<Solution>
+    <Project Path="Engine.csproj" />
+
+    <Project Path="../Core/Core.csproj" />
+    <Project Path="../Protocol/Protocol.csproj" />
+    <Project Path="../ProtocolGenerator/ProtocolGenerator.csproj" />
+</Solution>
