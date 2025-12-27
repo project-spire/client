@@ -1,6 +1,61 @@
-[gd_scene load_steps=2 format=3 uid="uid://j1s4a4adamcw"]
+[gd_scene format=3 uid="uid://j1s4a4adamcw"]
 
 [ext_resource type="Script" uid="uid://ddswyrqwlpt7t" path="res://Lobby/CharacterSlot.cs" id="1_gyro7"]
 
-[node name="CharacterSlot" type="Node"]
+[node name="CharacterSlot" type="Control" unique_id=1484721662 node_paths=PackedStringArray("NameLabel", "LevelLabel", "RaceLabel", "Portrait")]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -324.0
+offset_right = -176.0
+offset_bottom = -224.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_gyro7")
+NameLabel = NodePath("Container/NameLabel")
+LevelLabel = NodePath("Container/Container/Container/LevelLabel")
+RaceLabel = NodePath("Container/Container/Container/RaceLabel")
+Portrait = NodePath("Container/Container/Portrait")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1667647175]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.14586785, 0.14586785, 0.14586785, 1)
+
+[node name="Container" type="VBoxContainer" parent="." unique_id=430983202]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="NameLabel" type="Label" parent="Container" unique_id=205093722]
+layout_mode = 2
+text = "<Character Name>"
+vertical_alignment = 1
+
+[node name="Container" type="HBoxContainer" parent="Container" unique_id=283012210]
+layout_mode = 2
+
+[node name="Portrait" type="TextureRect" parent="Container/Container" unique_id=1635889834]
+layout_mode = 2
+
+[node name="Container" type="VBoxContainer" parent="Container/Container" unique_id=667035970]
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="Container/Container/Container" unique_id=1400603104]
+layout_mode = 2
+text = "Level <999>"
+
+[node name="RaceLabel" type="Label" parent="Container/Container/Container" unique_id=1234532055]
+layout_mode = 2
+text = "Race <None>"

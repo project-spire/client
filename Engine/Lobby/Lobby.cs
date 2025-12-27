@@ -10,25 +10,38 @@ using Spire.Protocol;
 using Spire.Protocol.Game;
 using Spire.Protocol.Game.Auth;
 using Spire.Protocol.Lobby;
+using Enum = System.Enum;
 using Error = Godot.Error;
 
 namespace Spire.Lobby;
 
 public partial class Lobby : LoggableNode
 {
-    [Export] public required LineEdit DevIdInput;
-    [Export] public required Button LobbyStartButton;
+    [Export] public required Control AccountLayer;
+    [Export] public required LineEdit DevAccountInput;
+    [Export] public required Button AccountConnectButton;
+
+    [Export] public required Control CharacterLayer;
     [Export] public required Button GameStartButton;
+    [Export] public required Control CharacterSlotsContainer;
     [Export] public required PackedScene CharacterSlotScene;
     
+    [Export] public required Button CharacterCreateButton;
+    [Export] public required LineEdit CharacterCreateNameInput;
+    [Export] public required OptionButton CharacterCreateRaceSelect;
+
+    private GrpcChannel _lobbyChannel = null!;
     private Account? _account;
     
     private const string ConfigFilePath = "user://lobby.cfg";
     private ConfigFile _config = new();
+    
+    private DateTime LobbyRequestDeadline => DateTime.UtcNow.AddSeconds(10);
 
     public override void _Ready()
     {
-        LobbyStartButton.Pressed += OnLobbyStartButtonPressed;
+        AccountConnectButton.Pressed += OnAccountConnectButtonPressed;
+        CharacterCreateButton.Pressed += OnCharacterCreateButtonPressed;
         GameStartButton.Pressed += OnGameStartButtonPressed;
         
         Logger.LogInformation("Loading config file \"{ConfigFilePath}\"", ProjectSettings.GlobalizePath(ConfigFilePath));
@@ -37,30 +50,8 @@ public partial class Lobby : LoggableNode
             string lastDevId = (string)_config.GetValue("Dev", "LastId", "");
             if (lastDevId != "")
             {
-                DevIdInput.Text = lastDevId;
+                DevAccountInput.Text = lastDevId;
             }
-        }
-    }
-
-    private void OnLobbyStartButtonPressed()
-    {
-        _ = RequestDevAuthAsync(DevIdInput.Text);
-        
-        _config.SetValue("Dev", "LastId", DevIdInput.Text);
-        _config.Save(ConfigFilePath);
-    }
-
-    private void OnGameStartButtonPressed()
-    {
-        
-    }
-
-    private async Task RequestDevAuthAsync(string devId)
-    {
-        if (Config.Mode != Mode.Dev)
-        {
-            Logger.LogWarning("Dev mode is not enabled!");
-            return;
         }
         
         var handler = new HttpClientHandler();
@@ -84,24 +75,59 @@ public partial class Lobby : LoggableNode
             HttpHandler = handler,
             Credentials = credentials
         };
-        var lobbyChannel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
-        var deadline = DateTime.UtcNow.AddSeconds(10);
+        _lobbyChannel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
+    }
+
+    private void OnAccountConnectButtonPressed()
+    {
+        _ = RequestDevAuthAsync(DevAccountInput.Text);
+        
+        _config.SetValue("Dev", "LastId", DevAccountInput.Text);
+        _config.Save(ConfigFilePath);
+    }
+
+    private void OnGameStartButtonPressed()
+    {
+        
+    }
+
+    private void OnCharacterCreateButtonPressed()
+    {
+        var name = CharacterCreateNameInput.Text;
+        var raceString = CharacterCreateRaceSelect.Text;
+
+        if (!Enum.TryParse<Race>(raceString, out var race))
+        {
+            Logger.LogError("Invalid race selected");
+            return;
+        }
+        
+        _ = RequestCreateCharacterAsync(name, race);
+    }
+
+    private async Task RequestDevAuthAsync(string devId)
+    {
+        if (Config.Mode != Mode.Dev)
+        {
+            Logger.LogWarning("Dev mode is not enabled!");
+            return;
+        }
         
         try
         {
-            var client = new DevAuth.DevAuthClient(lobbyChannel);
+            var client = new DevAuth.DevAuthClient(_lobbyChannel);
 			
             var accountRequest = new GetDevAccountRequest
             {
                 DevId = devId
             };
-            var accountResponse = await client.GetDevAccountAsync(accountRequest, deadline: deadline);
+            var accountResponse = await client.GetDevAccountAsync(accountRequest, deadline: LobbyRequestDeadline);
 
             var tokenRequest = new GetDevTokenRequest
             {
                 AccountId = accountResponse.AccountId
             };
-            var tokenResponse = await client.GetDevTokenAsync(tokenRequest, deadline: deadline);
+            var tokenResponse = await client.GetDevTokenAsync(tokenRequest, deadline: LobbyRequestDeadline);
 			
             _account = new DevAccount
             {
@@ -116,11 +142,16 @@ public partial class Lobby : LoggableNode
             return;
         }
 
+        await RequestListCharactersAsync();
+    }
+
+    private async Task RequestListCharactersAsync()
+    {
         try
         {
-            var client = new Characters.CharactersClient(lobbyChannel);
+            var client = new Characters.CharactersClient(_lobbyChannel);
 
-            var charactersResponse = await client.ListCharactersAsync(new Empty(), deadline: deadline);
+            var charactersResponse = await client.ListCharactersAsync(new Empty(), deadline: LobbyRequestDeadline);
 
             List<CharacterSlot> characterSlots = [];
             foreach (var characterData in charactersResponse.Characters)
@@ -134,14 +165,45 @@ public partial class Lobby : LoggableNode
         }
         catch (Exception e)
         {
-            Logger.LogError("Failed to get characters: {}", e.Message);
+            Logger.LogError("Failed to list characters: {}", e.Message);
             return;
         }
     }
 
+    private async Task RequestCreateCharacterAsync(string name, Race race)
+    {
+        Logger.LogInformation("Creating a character: name={name}, race={race}", name, race);
+        
+        try
+        {
+            var client = new Characters.CharactersClient(_lobbyChannel);
+
+            var createRequest = new CreateCharacterRequest
+            {
+                Name = name,
+                Race = race
+            };
+            var createResponse = await client.CreateCharacterAsync(createRequest, deadline: LobbyRequestDeadline);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Failed to create a character: {}", e.Message);
+            throw;
+        }
+        
+        // TODO: Just add a new character instead of requesting whole.
+        await RequestListCharactersAsync();
+    }
+    
     private void OnCharacterSlots(CharacterSlot[] characterSlots)
     {
-        Logger.LogInformation("Characters list response: {}", characterSlots);
+        foreach (var characterSlot in characterSlots)
+        {
+            CharacterSlotsContainer.AddChild(characterSlot);
+        }
+        
+        AccountLayer.Hide();
+        CharacterLayer.Show();
     }
 
     // private void OnAccountRequestCompleted()

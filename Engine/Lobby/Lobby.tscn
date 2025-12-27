@@ -1,22 +1,103 @@
-[gd_scene load_steps=2 format=3 uid="uid://bdb30klo3ux1o"]
+[gd_scene format=3 uid="uid://bdb30klo3ux1o"]
 
 [ext_resource type="Script" uid="uid://muigr54bny1m" path="res://Lobby/Lobby.cs" id="1_4ktdg"]
+[ext_resource type="PackedScene" uid="uid://j1s4a4adamcw" path="res://Lobby/CharacterSlot.tscn" id="2_ctcp8"]
 
-[node name="Lobby" type="MarginContainer" node_paths=PackedStringArray("DevIdInput", "StartButton")]
+[node name="Lobby" type="Control" unique_id=1150613087 node_paths=PackedStringArray("AccountLayer", "DevAccountInput", "AccountConnectButton", "CharacterLayer", "GameStartButton", "CharacterSlotsContainer", "CharacterCreateButton", "CharacterCreateNameInput", "CharacterCreateRaceSelect")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_4ktdg")
-DevIdInput = NodePath("MenuContainer/StartContainer/DevIdInput")
-StartButton = NodePath("MenuContainer/StartContainer/StartButton")
+AccountLayer = NodePath("AccountLayer")
+DevAccountInput = NodePath("AccountLayer/AccountContainer/DevAccountInput")
+AccountConnectButton = NodePath("AccountLayer/AccountContainer/ConnectButton")
+CharacterLayer = NodePath("CharacterLayer")
+GameStartButton = NodePath("CharacterLayer/StartContainer/StartButton")
+CharacterSlotsContainer = NodePath("CharacterLayer/CharacterContainer/CharacterSlotsContainer")
+CharacterSlotScene = ExtResource("2_ctcp8")
+CharacterCreateButton = NodePath("CharacterLayer/CreateContainer/CreateButton")
+CharacterCreateNameInput = NodePath("CharacterLayer/CreateContainer/NameInput")
+CharacterCreateRaceSelect = NodePath("CharacterLayer/CreateContainer/RaceSelect")
 
-[node name="MenuContainer" type="VBoxContainer" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1736240265]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="AccountLayer" type="MarginContainer" parent="." unique_id=473604375]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AccountContainer" type="VBoxContainer" parent="AccountLayer" unique_id=1732707714]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="DevAccountInput" type="LineEdit" parent="AccountLayer/AccountContainer" unique_id=732227687]
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+placeholder_text = "Dev Account"
+alignment = 1
+
+[node name="ConnectButton" type="Button" parent="AccountLayer/AccountContainer" unique_id=343698272]
+layout_mode = 2
+text = "CONNECT"
+
+[node name="CharacterLayer" type="MarginContainer" parent="." unique_id=2062119756]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CharacterContainer" type="VBoxContainer" parent="CharacterLayer" unique_id=16450851]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="CharacterSlotsContainer" type="VBoxContainer" parent="CharacterLayer/CharacterContainer" unique_id=583243563]
 layout_mode = 2
 
-[node name="StartContainer" type="HBoxContainer" parent="MenuContainer"]
+[node name="StartContainer" type="VBoxContainer" parent="CharacterLayer" unique_id=693223608]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
 
-[node name="DevIdInput" type="LineEdit" parent="MenuContainer/StartContainer"]
-layout_mode = 2
-placeholder_text = "Dev ID"
-
-[node name="StartButton" type="Button" parent="MenuContainer/StartContainer"]
+[node name="StartButton" type="Button" parent="CharacterLayer/StartContainer" unique_id=1027814248]
+custom_minimum_size = Vector2(200, 40)
 layout_mode = 2
 text = "START"
+
+[node name="CreateContainer" type="VBoxContainer" parent="CharacterLayer" unique_id=990486022]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="NameInput" type="LineEdit" parent="CharacterLayer/CreateContainer" unique_id=1863063467]
+layout_mode = 2
+placeholder_text = "Name"
+alignment = 1
+
+[node name="RaceSelect" type="OptionButton" parent="CharacterLayer/CreateContainer" unique_id=1148515676]
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "Human"
+popup/item_0/id = 0
+popup/item_1/text = "Orc"
+popup/item_1/id = 1
+
+[node name="CreateButton" type="Button" parent="CharacterLayer/CreateContainer" unique_id=1957421825]
+layout_mode = 2
+text = "CREATE"
