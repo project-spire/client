@@ -1,7 +1,0 @@
-<Solution>
-    <Project Path="Engine.csproj" />
-
-    <Project Path="../Core/Core.csproj" />
-    <Project Path="../Message/Message.csproj" />
-    <Project Path="../MessageGenerator/MessageGenerator.csproj" />
-</Solution>

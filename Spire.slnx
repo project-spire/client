@@ -1,0 +1,8 @@
+<Solution>
+    <Project Path="Bot/Bot.csproj" />
+    <Project Path="Engine/Engine.csproj" />
+
+    <Project Path="Core/Core.csproj" />
+    <Project Path="Message/Message.csproj" />
+    <Project Path="MessageGenerator/MessageGenerator.csproj" />
+</Solution>
