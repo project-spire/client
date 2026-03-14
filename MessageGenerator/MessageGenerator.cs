@@ -6,22 +6,22 @@ using Humanizer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Spire.ProtocolGenerator;
+namespace Spire.MessageGenerator;
 
 public class CategorySchema
 {
     public string Category { get; set; }
     public ushort Offset { get; set; }
-    public List<ProtocolSchema> Protocols { get; set; } = [];
+    public List<MessageSchema> Messages { get; set; } = [];
 }
 
-public class ProtocolSchema
+public class MessageSchema
 {
-    public string Protocol { get; set; }
-    public ProtocolTarget Target { get; set; }
+    public string Message { get; set; }
+    public MessageTarget Target { get; set; }
 }
 
-public enum ProtocolTarget
+public enum MessageTarget
 {
     Client,
     Server,
@@ -37,7 +37,7 @@ public class CategoryParseResult
 }
 
 [Generator]
-public class ProtocolGenerator : IIncrementalGenerator
+public class MessageGenerator : IIncrementalGenerator
 {
     private const string Tab = "    ";
 
@@ -51,14 +51,14 @@ public class ProtocolGenerator : IIncrementalGenerator
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         };
-        
+
         var pipeline = context.AdditionalTextsProvider
             .Where(text => text.Path.EndsWith(".json"))
             .Select((text, cancellationToken) =>
             {
                 var content = text.GetText(cancellationToken)?.ToString();
                 var fileName = Path.GetFileName(text.Path);
-                
+
                 if (string.IsNullOrWhiteSpace(content))
                 {
                     return new CategoryParseResult { IsSuccess = false, FileName = fileName };
@@ -67,7 +67,7 @@ public class ProtocolGenerator : IIncrementalGenerator
                 try
                 {
                     var schema = JsonSerializer.Deserialize<CategorySchema>(content!, options);
-                    return schema == null 
+                    return schema == null
                         ? new CategoryParseResult { IsSuccess = false, FileName = fileName }
                         : new CategoryParseResult { IsSuccess = true, FileName = fileName, Schema = schema };
                 }
@@ -77,11 +77,11 @@ public class ProtocolGenerator : IIncrementalGenerator
                 }
             })
             .Collect();
-        
-        context.RegisterSourceOutput(pipeline, GenerateProtocolCode);
+
+        context.RegisterSourceOutput(pipeline, GenerateMessageCode);
     }
 
-    private static void GenerateProtocolCode(
+    private static void GenerateMessageCode(
         SourceProductionContext context,
         ImmutableArray<CategoryParseResult> results)
     {
@@ -93,45 +93,45 @@ public class ProtocolGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(FileError, Location.None, result.FileName, result.ErrorMessage));
                 return;
             }
-            
+
             categorySchemas.Add(result.Schema);
         }
         categorySchemas.Sort((x, y) => x.Offset.CompareTo(y.Offset));
-        
-        List<(string category, string protocol, ushort number)> protocols = [];
+
+        List<(string category, string message, ushort number)> messages = [];
         foreach (var categorySchema in categorySchemas)
         {
             var number = categorySchema.Offset;
-            foreach (var protocolSchema in categorySchema.Protocols)
+            foreach (var messageSchema in categorySchema.Messages)
             {
-                protocols.Add((categorySchema.Category, protocolSchema.Protocol, number));
+                messages.Add((categorySchema.Category, messageSchema.Message, number));
                 number += 1;
             }
         }
-        
-        var code = GenerateProtocolCodeInternal(protocols);
-        context.AddSource("Protocol.impl.g.cs", SourceText.From(code, Encoding.UTF8));
+
+        var code = GenerateMessageCodeInternal(messages);
+        context.AddSource("Message.impl.g.cs", SourceText.From(code, Encoding.UTF8));
     }
 
-    private static string GenerateProtocolCodeInternal(List<(string category, string protocol, ushort number)> protocols)
+    private static string GenerateMessageCodeInternal(List<(string category, string message, ushort number)> messages)
     {
         List<string> decodes = [];
         List<string> cases = [];
-        
+
         // Generate code fragments
-        foreach (var (category, protocol, number) in protocols)
+        foreach (var (category, message, number) in messages)
         {
             var categoryName = category.Pascalize();
-            var recordName = $"{protocol}Protocol";
-            
-            decodes.Add($"{number} => new {recordName}({categoryName}.{protocol}.Parser.ParseFrom(data)),");
-            
+            var recordName = $"{message}Message";
+
+            decodes.Add($"{number} => new {recordName}({categoryName}.{message}.Parser.ParseFrom(data)),");
+
             cases.Add($@"
-public record {recordName}({categoryName}.{protocol} Value) : IProtocol
+public record {recordName}({categoryName}.{message} Value) : IMessage
 {{
-    public ushort ProtocolId => {number};
+    public ushort MessageId => {number};
     public int Size => Value.CalculateSize();
-    
+
     public void Encode(Span<byte> buffer)
     {{
         Value.WriteTo(buffer);
@@ -142,24 +142,24 @@ public record {recordName}({categoryName}.{protocol} Value) : IProtocol
         return $@"// Generated file
 using Google.Protobuf;
 
-namespace Spire.Protocol.Game;
+namespace Spire.Message.Game;
 
-public interface IProtocol
+public interface IMessage
 {{
-    public ushort ProtocolId {{ get; }}
+    public ushort MessageId {{ get; }}
     public int Size {{ get; }}
 
     public void Encode(Span<byte> buffer);
 
-    public static IProtocol Decode(ushort id, ReadOnlySpan<byte> data) {{
+    public static IMessage Decode(ushort id, ReadOnlySpan<byte> data) {{
         return id switch {{
             {string.Join($"\n{Tab}{Tab}{Tab}", decodes)}
-            _ => throw new ProtocolException($""Unknown protocol id: {{id}}"")
+            _ => throw new MessageException($""Unknown message id: {{id}}"")
         }};
     }}
 }}
 
-public class ProtocolException(string message) : Exception(message);
+public class MessageException(string message) : Exception(message);
 
 {string.Join("\n", cases)}
 ";

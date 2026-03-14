@@ -1,15 +1,15 @@
 using System.Buffers.Binary;
 
-namespace Spire.Protocol;
+namespace Spire.Message;
 
-public static class ProtocolConvert
+public static class MessageConvert
 {
     // public static Guid ToGuid(this Uuid uuid)
     // {
     //     Span<byte> bytes = stackalloc byte[16];
     //     BinaryPrimitives.WriteUInt64BigEndian(bytes, uuid.High);
     //     BinaryPrimitives.WriteUInt64BigEndian(bytes[8..], uuid.Low);
-    //     
+    //
     //     return new Guid(bytes);
     // }
     //

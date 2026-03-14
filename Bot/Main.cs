@@ -1,12 +1,12 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spire.Bot;
 using Spire.Bot.Network;
 using Spire.Bot.Node;
 using Spire.Core.BehaviorTree;
-using Spire.Protocol.Game;
-using Spire.Protocol.Game.Auth;
+using Spire.Message.Game;
+using Spire.Message.Game.Auth;
 
 var services = new ServiceCollection()
     .AddLogging(configure =>
@@ -19,7 +19,7 @@ var services = new ServiceCollection()
 var logger = services.GetRequiredService<ILogger<Program>>();
 var loggerFactory = services.GetRequiredService<ILoggerFactory>();
 
-BotProtocolDispatcher.Initialize(Assembly.GetExecutingAssembly());
+BotMessageDispatcher.Initialize(Assembly.GetExecutingAssembly());
 
 logger.LogInformation("Starting {NumBots} bots...", Config.BotCount);
 
@@ -28,7 +28,7 @@ for (ushort botId = 1; botId <= Config.BotCount; botId++)
 {
     var botLogger = loggerFactory.CreateLogger<BotContext>();
     var botContext = new BotContext(botId, botLogger);
-    
+
     botTasks.Add(StartBotAsync(botContext));
 }
 
@@ -53,14 +53,14 @@ async Task StartBotAsync(BotContext ctx)
 
         await ctx.GameSession.ConnectAsync(Config.GameHost, Config.GamePort);
 
-        var login = new LoginProtocol(new Login
+        var login = new LoginMessage(new Login
         {
             Kind = Login.Types.Kind.Enter,
             Token = ctx.Token,
             CharacterId = ctx.Character!.Id
         });
         await ctx.GameSession.LoginAsync(login);
-        
+
         await ctx.GameSession.StartAsync();
 
         await Task.WhenAny(ctx.Stopped, ctx.GameSession.CompletionTask);

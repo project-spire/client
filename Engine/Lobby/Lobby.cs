@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 using Spire.Core;
 using Spire.Core.Log;
 using Spire.Core.Network;
-using Spire.Protocol;
-using Spire.Protocol.Game;
-using Spire.Protocol.Game.Auth;
-using Spire.Protocol.Lobby;
+using Spire.Message;
+using Spire.Message.Game;
+using Spire.Message.Game.Auth;
+using Spire.Message.Lobby;
 using Enum = System.Enum;
 using Error = Godot.Error;
 
@@ -25,17 +25,17 @@ public partial class Lobby : LoggableNode
     [Export] public required Button GameStartButton;
     [Export] public required Control CharacterSlotsContainer;
     [Export] public required PackedScene CharacterSlotScene;
-    
+
     [Export] public required Button CharacterCreateButton;
     [Export] public required LineEdit CharacterCreateNameInput;
     [Export] public required OptionButton CharacterCreateRaceSelect;
 
     private GrpcChannel _lobbyChannel = null!;
     private Account? _account;
-    
+
     private const string ConfigFilePath = "user://lobby.cfg";
     private ConfigFile _config = new();
-    
+
     private DateTime LobbyRequestDeadline => DateTime.UtcNow.AddSeconds(10);
 
     public override void _Ready()
@@ -43,7 +43,7 @@ public partial class Lobby : LoggableNode
         AccountConnectButton.Pressed += OnAccountConnectButtonPressed;
         CharacterCreateButton.Pressed += OnCharacterCreateButtonPressed;
         GameStartButton.Pressed += OnGameStartButtonPressed;
-        
+
         Logger.LogInformation("Loading config file \"{ConfigFilePath}\"", ProjectSettings.GlobalizePath(ConfigFilePath));
         if (_config.Load(ConfigFilePath) == Error.Ok)
         {
@@ -53,7 +53,7 @@ public partial class Lobby : LoggableNode
                 DevAccountInput.Text = lastDevId;
             }
         }
-        
+
         var handler = new HttpClientHandler();
         if (Config.Mode == Mode.Dev)
         {
@@ -66,7 +66,7 @@ public partial class Lobby : LoggableNode
             {
                 if (_account?.Token is not null)
                     metadata.Add("authentication", _account!.Token);
-            
+
                 return Task.CompletedTask;
             }));
 
@@ -81,14 +81,14 @@ public partial class Lobby : LoggableNode
     private void OnAccountConnectButtonPressed()
     {
         _ = RequestDevAuthAsync(DevAccountInput.Text);
-        
+
         _config.SetValue("Dev", "LastId", DevAccountInput.Text);
         _config.Save(ConfigFilePath);
     }
 
     private void OnGameStartButtonPressed()
     {
-        
+
     }
 
     private void OnCharacterCreateButtonPressed()
@@ -101,7 +101,7 @@ public partial class Lobby : LoggableNode
             Logger.LogError("Invalid race selected");
             return;
         }
-        
+
         _ = RequestCreateCharacterAsync(name, race);
     }
 
@@ -112,11 +112,11 @@ public partial class Lobby : LoggableNode
             Logger.LogWarning("Dev mode is not enabled!");
             return;
         }
-        
+
         try
         {
             var client = new DevAuth.DevAuthClient(_lobbyChannel);
-			
+
             var accountRequest = new GetDevAccountRequest
             {
                 DevId = devId
@@ -128,7 +128,7 @@ public partial class Lobby : LoggableNode
                 AccountId = accountResponse.AccountId
             };
             var tokenResponse = await client.GetDevTokenAsync(tokenRequest, deadline: LobbyRequestDeadline);
-			
+
             _account = new DevAccount
             {
                 AccountId = accountResponse.AccountId,
@@ -173,7 +173,7 @@ public partial class Lobby : LoggableNode
     private async Task RequestCreateCharacterAsync(string name, Race race)
     {
         Logger.LogInformation("Creating a character: name={name}, race={race}", name, race);
-        
+
         try
         {
             var client = new Characters.CharactersClient(_lobbyChannel);
@@ -190,18 +190,18 @@ public partial class Lobby : LoggableNode
             Logger.LogError("Failed to create a character: {}", e.Message);
             throw;
         }
-        
+
         // TODO: Just add a new character instead of requesting whole.
         await RequestListCharactersAsync();
     }
-    
+
     private void OnCharacterSlots(CharacterSlot[] characterSlots)
     {
         foreach (var characterSlot in characterSlots)
         {
             CharacterSlotsContainer.AddChild(characterSlot);
         }
-        
+
         AccountLayer.Hide();
         CharacterLayer.Show();
     }
@@ -219,8 +219,8 @@ public partial class Lobby : LoggableNode
     //     Task.Run(async () =>
     //     {
     //         await NetworkManager.Session.ConnectAsync(Config.GameHost, Config.GamePort);
-    //         
-    //         var login = new LoginProtocol(new Login
+    //
+    //         var login = new LoginMessage(new Login
     //         {
     //             Kind = Login.Types.Kind.Enter,
     //             Token = _lobbyManager.Account!.Token,

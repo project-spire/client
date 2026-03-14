@@ -5,7 +5,7 @@ using Spire.Bot.Network;
 using Spire.Core;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
-using Spire.Protocol.Lobby;
+using Spire.Message.Lobby;
 
 namespace Spire.Bot;
 
@@ -17,17 +17,17 @@ public class BotContext : INodeContext
     public string? Token { get; private set; }
     public GrpcChannel LobbyChannel { get; init; }
     public readonly ILogger<BotContext> Logger;
-    
+
     private readonly TaskCompletionSource _stopped = new();
 
     // public DevAuth.DevAuthClient DevAuthClient { get; }
-    
+
     public Session GameSession { get; }
     // public Account? Account { get; set; }
-    
+
     public Character? Character { get; set; }
     public Task Stopped => _stopped.Task;
-    
+
     public BotContext(ushort botId, ILogger<BotContext> logger)
     {
         BotId = botId;
@@ -46,7 +46,7 @@ public class BotContext : INodeContext
             {
                 if (Token is not null)
                     metadata.Add("authentication", Token);
-                
+
                 return Task.CompletedTask;
             }));
 
@@ -56,16 +56,16 @@ public class BotContext : INodeContext
             Credentials = credentials
         };
         LobbyChannel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
-        
-        var protocolDispatcher = new BotProtocolDispatcher(Logger, this);
-        GameSession = new Session(protocolDispatcher, Logger);
+
+        var messageDispatcher = new BotMessageDispatcher(Logger, this);
+        GameSession = new Session(messageDispatcher, Logger);
     }
 
     public void Stop(Exception? e = null)
     {
         if (e != null)
             Logger.LogError("Stopping: {message}", e.Message);
-        
+
         GameSession.Stop();
         _stopped.TrySetResult();
     }
@@ -73,12 +73,12 @@ public class BotContext : INodeContext
     public void OnDevAccountAcquired(long accountId, string token)
     {
         Logger.LogInformation("Dev Account acquired: {accountId}, {token}", accountId, token);
-        
+
         AccountId = accountId;
         Token = token;
     }
 
-    public void OnCharacterAcquired(Protocol.CharacterData characterData)
+    public void OnCharacterAcquired(Message.CharacterData characterData)
     {
         Logger.LogInformation("Dev Account acquired: {name}", characterData.Name);
 

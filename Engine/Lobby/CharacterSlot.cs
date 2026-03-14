@@ -1,6 +1,6 @@
 using Godot;
 using System;
-using Spire.Protocol;
+using Spire.Message;
 
 namespace Spire.Lobby;
 

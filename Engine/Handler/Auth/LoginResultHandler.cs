@@ -1,15 +1,15 @@
 using Microsoft.Extensions.Logging;
 using Spire.Core.Network;
-using Spire.Protocol.Game;
-using Spire.Protocol.Game.Auth;
+using Spire.Message.Game;
+using Spire.Message.Game.Auth;
 
 namespace Spire.Handler.Auth;
 
 public static class LoginResultHandler
 {
-    [ProtocolHandler(typeof(LoginResultProtocol))]
+    [MessageHandler(typeof(LoginResultMessage))]
     public static void Handle(LoginResult result)
     {
-        
+
     }
 }

@@ -8,9 +8,9 @@ public partial class NetworkManager : LoggableNode
 
     public override void _Ready()
     {
-        EngineProtocolDispatcher.Initialize();
+        EngineMessageDispatcher.Initialize();
 
-        var protocolDispatcher = new EngineProtocolDispatcher(Logger);
-        Session = new Session(protocolDispatcher, Logger);
+        var messageDispatcher = new EngineMessageDispatcher(Logger);
+        Session = new Session(messageDispatcher, Logger);
     }
 }

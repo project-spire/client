@@ -1,19 +1,18 @@
 using System.Reflection;
-using Google.Protobuf;
-using Spire.Protocol.Game;
+using Spire.Message.Game;
 
 namespace Spire.Core.Network;
 
-public abstract class ProtocolDispatcher
+public abstract class MessageDispatcher
 {
     protected static readonly Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> HandlerEntries = [];
-    
+
     protected static void Initialize(Assembly assembly, params Type[] additionalParameterTypes)
     {
         var handlers = assembly.GetTypes()
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
-            .Where(method => method.IsDefined(typeof(ProtocolHandlerAttribute), false));
-        
+            .Where(method => method.IsDefined(typeof(MessageHandlerAttribute), false));
+
         foreach (var handler in handlers)
         {
             Register(handler, additionalParameterTypes);
@@ -22,57 +21,57 @@ public abstract class ProtocolDispatcher
 
     private static void Register(MethodInfo handler, Type[] additionalParameterTypes)
     {
-        var attribute = handler.GetCustomAttribute<ProtocolHandlerAttribute>()!;
-        
+        var attribute = handler.GetCustomAttribute<MessageHandlerAttribute>()!;
+
         var parameters = handler.GetParameters();
         var expectedParameterCount = 1 + additionalParameterTypes.Length;
-        
+
         if (parameters.Length != expectedParameterCount)
         {
             throw new Exception(
-                $"Invalid protocol handler signature: {handler.DeclaringType?.Name}.{handler.Name}. " +
+                $"Invalid message handler signature: {handler.DeclaringType?.Name}.{handler.Name}. " +
                 $"Expected {expectedParameterCount} parameters, got {parameters.Length}");
         }
-        
+
         // Validate attribute type
-        var protocolWrapperType = attribute.ProtocolType;
-        if (!typeof(IProtocol).IsAssignableFrom(protocolWrapperType))
+        var messageWrapperType = attribute.MessageType;
+        if (!typeof(IMessage).IsAssignableFrom(messageWrapperType))
         {
             throw new Exception(
-                $"Protocol type {protocolWrapperType.Name} must implement {nameof(IProtocol)}");
+                $"Message type {messageWrapperType.Name} must implement {nameof(IMessage)}");
         }
-        
-        // Validate first parameter to be Protocol.
-        var protocolDataType = parameters[0].ParameterType;
-        if (!typeof(IMessage).IsAssignableFrom(protocolDataType))
+
+        // Validate first parameter to be protobuf IMessage.
+        var messageDataType = parameters[0].ParameterType;
+        if (!typeof(Google.Protobuf.IMessage).IsAssignableFrom(messageDataType))
         {
             throw new Exception(
-                $"Protocol data type {protocolDataType.Name} must implement {nameof(IMessage)}");
+                $"Message data type {messageDataType.Name} must implement {nameof(Google.Protobuf.IMessage)}");
         }
-        
+
         // Validate additional parameters
         for (int i = 0; i < additionalParameterTypes.Length; i++)
         {
             var actualType = parameters[i + 1].ParameterType;
             var expectedType = additionalParameterTypes[i];
-            
+
             if (actualType != expectedType)
             {
                 throw new Exception(
-                    $"Invalid protocol handler signature: {handler.DeclaringType?.Name}.{handler.Name}. " +
+                    $"Invalid message handler signature: {handler.DeclaringType?.Name}.{handler.Name}. " +
                     $"Parameter {i + 1} expected type {expectedType.Name}, got {actualType.Name}");
             }
         }
-        
-        var instance = (IProtocol)Activator.CreateInstance(protocolWrapperType, [null])!;
-        var protocolId = instance.ProtocolId;
-        
-        var valueProperty = protocolWrapperType.GetProperty("Value")!;
-        
-        HandlerEntries[protocolId] = (handler, valueProperty);
+
+        var instance = (IMessage)Activator.CreateInstance(messageWrapperType, [null])!;
+        var messageId = instance.MessageId;
+
+        var valueProperty = messageWrapperType.GetProperty("Value")!;
+
+        HandlerEntries[messageId] = (handler, valueProperty);
     }
-    
-    public abstract void Dispatch(IProtocol protocol);
+
+    public abstract void Dispatch(IMessage message);
 }
 
 [Serializable]

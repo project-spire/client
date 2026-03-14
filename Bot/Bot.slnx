@@ -2,6 +2,6 @@
     <Project Path="Bot.csproj" />
 
     <Project Path="../Core/Core.csproj" />
-    <Project Path="../Protocol/Protocol.csproj" />
-    <Project Path="../ProtocolGenerator/ProtocolGenerator.csproj" />
+    <Project Path="../Message/Message.csproj" />
+    <Project Path="../MessageGenerator/MessageGenerator.csproj" />
 </Solution>

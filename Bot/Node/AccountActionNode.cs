@@ -1,5 +1,5 @@
 using Spire.Core.BehaviorTree;
-using Spire.Protocol.Lobby;
+using Spire.Message.Lobby;
 
 namespace Spire.Bot.Node;
 
@@ -9,7 +9,7 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
     {
         var client = new DevAuth.DevAuthClient(ctx.LobbyChannel);
         var deadline = DateTime.UtcNow.AddSeconds(10);
-        
+
         var devAccountRequest = new GetDevAccountRequest
         {
             DevId = ctx.DevId
@@ -21,7 +21,7 @@ public class AccountActionNode() : ActionNode(ctx => RequestAccount((BotContext)
             AccountId = devAccountResponse.AccountId
         };
         var tokenResponse = await client.GetDevTokenAsync(tokenRequest, deadline: deadline);
-        
+
         ctx.OnDevAccountAcquired(devAccountResponse.AccountId, tokenResponse.Token);
         return NodeState.Success;
     }
