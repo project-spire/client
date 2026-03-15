@@ -5,6 +5,7 @@ using Spire.Bot.Network;
 using Spire.Core;
 using Spire.Core.BehaviorTree;
 using Spire.Core.Network;
+using Spire.Core.State;
 using Spire.Message.Lobby;
 
 namespace Spire.Bot;
@@ -20,10 +21,8 @@ public class BotContext : INodeContext
 
     private readonly TaskCompletionSource _stopped = new();
 
-    // public DevAuth.DevAuthClient DevAuthClient { get; }
-
+    public GameState GameState { get; }
     public Session GameSession { get; }
-    // public Account? Account { get; set; }
 
     public Character? Character { get; set; }
     public Task Stopped => _stopped.Task;
@@ -57,7 +56,9 @@ public class BotContext : INodeContext
         };
         LobbyChannel = GrpcChannel.ForAddress(Config.LobbyAddress, options);
 
-        var messageDispatcher = new BotMessageDispatcher(Logger, this);
+        GameState = new GameState();
+        var messageDispatcher = new BotMessageDispatcher(Logger, this, GameState);
+        messageDispatcher.Initialize();
         GameSession = new Session(messageDispatcher, Logger);
     }
 

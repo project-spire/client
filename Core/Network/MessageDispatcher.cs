@@ -3,11 +3,35 @@ using Spire.Message.Game;
 
 namespace Spire.Core.Network;
 
+/// <summary>
+/// Two-phase message dispatcher. Handlers are split into core and frontend:
+///
+/// - Core handlers live in the Core assembly and mutate shared GameState.
+///   Signature: Handle(ProtoMsg data, GameState state)
+///
+/// - Frontend handlers live in their respective frontend assembly (Bot/Engine)
+///   and perform frontend-specific reactions (logging, UI, automation).
+///   Signature varies by frontend:
+///     Bot:    Handle(ProtoMsg data, BotContext ctx)
+///     Engine: Handle(ProtoMsg data)
+///
+/// Which set a handler belongs to is determined by assembly, not by attribute.
+/// On dispatch, the core handler runs first (state mutation), then the frontend
+/// handler (reaction). Either or both may be absent for a given message.
+/// </summary>
 public abstract class MessageDispatcher
 {
-    protected static readonly Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> HandlerEntries = [];
+    private readonly Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> _coreHandlers = [];
+    private readonly Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> _frontendHandlers = [];
 
-    protected static void Initialize(Assembly assembly, params Type[] additionalParameterTypes)
+    protected void RegisterCoreHandlers(Assembly assembly, params Type[] additionalParameterTypes)
+        => RegisterHandlers(assembly, additionalParameterTypes, _coreHandlers);
+
+    protected void RegisterFrontendHandlers(Assembly assembly, params Type[] additionalParameterTypes)
+        => RegisterHandlers(assembly, additionalParameterTypes, _frontendHandlers);
+
+    private static void RegisterHandlers(Assembly assembly, Type[] additionalParameterTypes,
+        Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> target)
     {
         var handlers = assembly.GetTypes()
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
@@ -15,11 +39,12 @@ public abstract class MessageDispatcher
 
         foreach (var handler in handlers)
         {
-            Register(handler, additionalParameterTypes);
+            Register(handler, additionalParameterTypes, target);
         }
     }
 
-    private static void Register(MethodInfo handler, Type[] additionalParameterTypes)
+    private static void Register(MethodInfo handler, Type[] additionalParameterTypes,
+        Dictionary<ushort, (MethodInfo handler, PropertyInfo valueProperty)> target)
     {
         var attribute = handler.GetCustomAttribute<MessageHandlerAttribute>()!;
 
@@ -68,11 +93,47 @@ public abstract class MessageDispatcher
 
         var valueProperty = messageWrapperType.GetProperty("Value")!;
 
-        HandlerEntries[messageId] = (handler, valueProperty);
+        target[messageId] = (handler, valueProperty);
     }
 
-    public abstract void Dispatch(IMessage message);
-}
+    public void Dispatch(IMessage message)
+    {
+        var handled = false;
 
-[Serializable]
-public class DispatchException(string message) : Exception(message);
+        if (_coreHandlers.TryGetValue(message.MessageId, out var coreEntry))
+        {
+            try
+            {
+                var messageData = coreEntry.valueProperty.GetValue(message);
+                coreEntry.handler.Invoke(null, BuildCoreArgs(messageData));
+                handled = true;
+            }
+            catch (Exception e)
+            {
+                OnDispatchError(message, e);
+            }
+        }
+
+        if (_frontendHandlers.TryGetValue(message.MessageId, out var frontendEntry))
+        {
+            try
+            {
+                var messageData = frontendEntry.valueProperty.GetValue(message);
+                frontendEntry.handler.Invoke(null, BuildFrontendArgs(messageData));
+                handled = true;
+            }
+            catch (Exception e)
+            {
+                OnDispatchError(message, e);
+            }
+        }
+
+        if (!handled)
+            OnUnhandledMessage(message);
+    }
+
+    protected abstract object?[] BuildCoreArgs(object? messageData);
+    protected abstract object?[] BuildFrontendArgs(object? messageData);
+    protected abstract void OnUnhandledMessage(IMessage message);
+    protected abstract void OnDispatchError(IMessage message, Exception e);
+}

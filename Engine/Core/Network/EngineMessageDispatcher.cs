@@ -1,32 +1,29 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using Spire.Core.State;
 using Spire.Message.Game;
 
 namespace Spire.Core.Network;
 
-public class EngineMessageDispatcher(ILogger logger) : MessageDispatcher
+public class EngineMessageDispatcher(ILogger logger, GameState gameState) : MessageDispatcher
 {
-    public static void Initialize()
+    public void Initialize()
     {
-        MessageDispatcher.Initialize(Assembly.GetExecutingAssembly());
+        RegisterCoreHandlers(typeof(GameState).Assembly, typeof(GameState));
+        RegisterFrontendHandlers(Assembly.GetExecutingAssembly());
     }
 
-    public override void Dispatch(IMessage message)
-    {
-        if (!HandlerEntries.TryGetValue(message.MessageId, out var entry))
-        {
-            logger.LogError($"Unhandled message {nameof(message)}");
-            return;
-        }
+    protected override object?[] BuildCoreArgs(object? messageData) => [messageData, gameState];
 
-        try
-        {
-            var messageData = entry.valueProperty.GetValue(message);
-            entry.handler.Invoke(null, [messageData]);
-        }
-        catch (Exception e)
-        {
-            logger.LogError("Failed to dispatch message {MessageName}: {EMessage}", nameof(message), e.Message);
-        }
+    protected override object?[] BuildFrontendArgs(object? messageData) => [messageData];
+
+    protected override void OnUnhandledMessage(IMessage message)
+    {
+        logger.LogWarning("Unhandled message: {MessageId}", message.MessageId);
+    }
+
+    protected override void OnDispatchError(IMessage message, Exception e)
+    {
+        logger.LogError("Failed to dispatch message {MessageId}: {Error}", message.MessageId, e.Message);
     }
 }
